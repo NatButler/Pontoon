@@ -17,7 +17,6 @@ function Deck() {
 	this.suits = ['Clubs', 'Diamonds', 'Hearts', 'Spades'];
 	this.ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
 	this.cards = new Array(this.suits.length * this.ranks.length);
-	this.buildDeck();
 }
 
 Deck.prototype.cardAt = function(pos) {
