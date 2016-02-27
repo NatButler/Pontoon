@@ -4,7 +4,7 @@ function randomInt(min, max) {
 }
 
 
-// CARDS CONSTRUCTOR
+// CARD CONSTRUCTOR
 function Card(rank, suit, value) {
 	this.rank = rank;
 	this.suit = suit;
