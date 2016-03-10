@@ -56,14 +56,6 @@ function forEachIn(object, action) {
 	}
 }
 
-function dealOrder(banker) {
-	var order = [table.playerNames[banker]];
-	for (var i = 0, len = table.playerNames.length; i < len; i++) {
-		if (i !== banker) { order.unshift(table.playerNames[i]); }
-	}
-	return order;
-}
-
 function findDuplicates(arr) {
 	var newArr = arr.slice().sort();
 	for (var i = 0; i < arr.length; i++) {
@@ -156,10 +148,10 @@ Deck.prototype.cut = function() {
 
 Deck.prototype.deal = function(order) {
 	for (var i = 0; i < order.length; i++) {
-		var player = player.lookup(order[i]);
+		var player = players.lookup(order[i]);
 		player.hand.add( this.twist() );
 
-		if ( players.contains(player, 'splitHand') ) {
+		if ( players.contains(player, 'splitHand') ) { // Possibly not necessary
 			console.log('Split hand');
 			player.splitHand.add( this.twist() );
 			i--;
@@ -182,13 +174,13 @@ Deck.prototype.addToDeck = function(hand) {
 function Table(loStake, hiStake) {
 	this.loStake = loStake;
 	this.hiStake = hiStake;
-	this.playerNames = [];
+	this.dealOrder = [];
 
 	deck = new Deck();
 }
 
 Table.prototype.addPlayer = function(name) {
-	this.playerNames.push( name );
+	this.dealOrder.push( name );
 }
 
 Table.prototype.setStakes = function(lo, hi) {		// Probably not be necessary as set when creating new Table()
@@ -196,22 +188,29 @@ Table.prototype.setStakes = function(lo, hi) {		// Probably not be necessary as 
 	this.hiStake = hi;
 }
 
-Table.prototype.deal = function() {
-	deck.deal( dealOrder(this.banker) );
-}
-
 Table.prototype.determineBanker = function() {
 	var cutCards = [];
-	for (var i = 0; i < this.playerNames.length; i++) {
-		var cutCard = players.lookup(this.playerNames[i]).cutDeck();
+	for (var i = 0; i < this.dealOrder.length; i++) {
+		var cutCard = players.lookup(this.dealOrder[i]).cutDeck();
 		cutCards.push( cutVals.lookup(cutCard.rank) );
 	}
 	if ( !findDuplicates(cutCards) ) {
 		this.banker = highestCard(cutCards);
+		// this.setDealOrder();
 		return this.banker;
 	} else {
 		this.determineBanker();
 	}
+}
+
+Table.prototype.setDealOrder = function() { 		// Currently uses index to represent banker - perhaps use name instead
+	var order = [];
+	for (var i = 0, len = this.dealOrder.length; i < len; i++) {
+		if (i !== this.banker) { order.push(table.dealOrder[i]); }
+	}
+	order.push(this.dealOrder[this.banker]);
+	this.dealOrder = order;
+	return this.dealOrder;
 }
 
 Table.prototype.compareHands = function() {

@@ -19,7 +19,7 @@ function cache() {
 function bindEvents() {
 	addPlayerButton.addEventListener('click', addPlayer);
 	cutDeckButton.addEventListener( 'click', () => { cutForBanker(); } );
-	dealButton.addEventListener('click', () => { table.deal(); displayHand(); } );
+	dealButton.addEventListener('click', () => { deck.deal(table.setDealOrder()); displayHand(); } );
 }
 
 function gameStart() {
@@ -36,7 +36,7 @@ function addPlayer() {
 	if (!name) {
 		addPlayer();
 	} else {
-		players.store( name, new Player('name', table.playerNames.length) );
+		players.store( name, new Player('name', table.dealOrder.length) );
 		table.addPlayer(name);
 
 		displayPlayer(players.lookup(name).id, name, players.lookup(name).chips);
@@ -65,8 +65,8 @@ function cutForBanker() {
 }
 
 function displayCut() {
-	for (var i = 0; i < table.playerNames.length; i++) {
-		var player = players.lookup( table.playerNames[i] ),
+	for (var i = 0; i < table.dealOrder.length; i++) {
+		var player = players.lookup( table.dealOrder[i] ),
 			cutSpan = document.getElementById( 'cut_' + player.id.toString() );
 
 		cutSpan.className += ' ' + player.cutCard.suit;
@@ -75,8 +75,8 @@ function displayCut() {
 }
 
 function displayHand() {
-	for (var i = 0; i < table.playerNames.length; i++) {
-		var player = players.lookup(table.playerNames[i]),
+	for (var i = 0; i < table.dealOrder.length; i++) {
+		var player = players.lookup(table.dealOrder[i]),
 			id = player.id.toString(),
 			handLen = player.hand.cards.length -1,
 			suit = player.hand.cards[handLen].suit,
