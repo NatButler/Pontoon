@@ -1,1 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Cards</title>
+
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header id="hd-main">
+	<h1>Pontoon</h1>
+
+	<h4>Stakes: <span id="stakes"></span></h4>
+
+	<div id="controls">
+		<button id="new-game">New game</button>
+		<button id="add-player">Add player</button>
+		<button id="cut-deck">Cut for banker</button>
+		<button id="deal">Deal</button>
+	</div>
+</header>
+
+<div id="players">
+<!-- Use templating to display multiple users? -->
+<script id="user-template" type="user/player-template">
+	<div class="player-wrapper" id="{{id}}">
+
+		<span class="cut" id="cut_{{id}}"></span>
+		<h3 id="player_{{id}}">{{name}}</h3>
+
+		<span class="hand" id="hand_{{id}}"></span>
+
+		<p>Current hand: <span id="hand-total_{{id}}"></span> <span id="hand-name"></span></p>
+		<p>Current bet: <span id="bet-total_{{id}}"></span></p>
+		<p>Chips: <span id="chips_{{id}}">{{chips}}</span></p>
+
+
+		<!--<button id="cut_{{id}}">Cut deck</button>-->
+		<button id="bet_{{id}}">Place bet</button>
+		<button id="split_{{id}}">Split hand</button>
+		<button id="twist_{{id}}">Twist</button>
+		<button id="stick_{{id}}">Stick</button>
+		<button id="buy_{{id}}">Buy one</button>
+
+		<p id="chips_{{id}}"></p>
+
+	</div>
+</script>
+
+</div>
+
 <script src="js/cards.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/charmap.js"></script>
+</body>
+</html>
