@@ -1,5 +1,21 @@
 'use strict';
-var newGameButton, addPlayerButton, cutDeckButton, dealButton, userTemplate, playersDiv, stakesElem;
+var newGameButton, addPlayerButton, cutDeckButton, dealButton, userTemplate, playersDiv, stakesElem, twistButtons;
+
+
+// PUB-SUB
+(function( $ ) { // Can't pass arrays with this implementation
+	var o = $( {} );
+	$.each({
+		trigger: 'publish', // 'dealt' [dealOrder], 'handUpdate' [hand]
+		on: 'subscribe',
+		off: 'unsubscribe'
+	}, function(key, val) {
+		jQuery[val] = function() {
+			o[key].apply(o, arguments);
+		};
+	});
+})( jQuery )
+
 
 function init() {
 	cache();
@@ -18,8 +34,8 @@ function cache() {
 
 function bindEvents() {
 	addPlayerButton.addEventListener('click', addPlayer);
-	cutDeckButton.addEventListener( 'click', () => { cutForBanker(); } );
-	dealButton.addEventListener('click', () => { deck.deal(table.setDealOrder()); displayHand(); } );
+	cutDeckButton.addEventListener('click', () => { cutForBanker(); });
+	dealButton.addEventListener('click', () => { table.deal(); displayHand(table.dealOrder); twistButtons = document.getElementsByClassName('twist'); registerEventHandlers(twistButtons, 'click', twist); });
 }
 
 function gameStart() {
@@ -32,60 +48,59 @@ function gameStart() {
 }
 
 function addPlayer() {
-	var name = prompt('Please enter your name.');
-	if (!name) {
-		addPlayer();
-	} else {
-		players.store( name, new Player('name', table.dealOrder.length) );
-		table.addPlayer(name);
-
-		displayPlayer(players.lookup(name).id, name, players.lookup(name).chips);
+	var name = prompt('Enter player name.');
+	if (!name) { }
+	else if (name === '') { addPlayer(); } 
+	else {
+		var id = 'P_'+table.dealOrder.length;
+		players.store( id, new Player(name, id) );
+		table.addToTable(id);
+		displayPlayer( players.lookup(id) );
 	}
-
 }
 
-function displayPlayer(id, name, chips) {
+function displayPlayer(player) {
 	var list = '';
 
-	list += userTemplate.replace(/{{id}}/g, id.toString())
-						.replace(/{{name}}/i, name)
-						.replace(/{{chips}}/i, chips);
+	list += userTemplate.replace(/{{id}}/g, player.id)
+						.replace(/{{name}}/i, player.name)
+						.replace(/{{chips}}/i, player.chips);
 
 	playersDiv.innerHTML += list;
 }
 
 function cutForBanker() {
-	var banker = table.determineBanker(),
+	var banker = table.determineDealer(),
 		playerDiv = document.getElementById( banker.toString() );
 	
 	if (banker || banker === 0) {
-		playerDiv.className += ' banker';
+		playerDiv.children(h3).className += ' banker';
 		displayCut();
 	}
+
+	table.setDealOrder();
 }
 
 function displayCut() {
 	for (var i = 0; i < table.dealOrder.length; i++) {
 		var player = players.lookup( table.dealOrder[i] ),
-			cutSpan = document.getElementById( 'cut_' + player.id.toString() );
+			cutSpan = document.getElementById( 'cut_' + player.id );
 
 		cutSpan.className += ' ' + player.cutCard.suit;
-		cutSpan.innerHTML = charMap[player.cutCard.rank + player.cutCard.suit];
+		cutSpan.innerHTML = charMap[player.cutCard.name()];
 	}
 }
 
-function displayHand() {
-	for (var i = 0; i < table.dealOrder.length; i++) {
-		var player = players.lookup(table.dealOrder[i]),
-			id = player.id.toString(),
+function displayHand(order) { 
+	for (var i = 0; i < order.length; i++) {
+		var player = players.lookup(order[i]),
 			handLen = player.hand.cards.length -1,
-			suit = player.hand.cards[handLen].suit,
-			card = player.hand.cards[handLen].rank + suit,
-			handSpan = document.getElementById('hand_' + id),
-			handTotalSpan = document.getElementById('hand-total_' + id);
+			card = player.hand.cards[handLen].name(),
+			handSpan = document.getElementById('hand_' + player.id),
+			handTotalSpan = document.getElementById('hand-total_' + player.id);
 
-			handSpan.innerHTML += '<span class=" ' + suit + '">' + charMap[card] + '</span>';
-			handTotalSpan.innerHTML = player.hand.total();
+		handSpan.innerHTML += '<span class=" ' + player.hand.cards[handLen].suit + '">' + charMap[card] + '</span>';
+		handTotalSpan.innerHTML = player.hand.total();
 	}
 }
 
@@ -97,6 +112,19 @@ function splitHand() {
 
 function checkHand() {
 
+}
+
+function twist() {
+	players.lookup(this.id).twist();
+	displayHand([this.id]);
+}
+
+
+// HELPER FUNCTIONS
+function registerEventHandlers(nodes, event, handler) {
+	forEach(nodes, function(node) {
+		node.addEventListener(event, handler);
+	});
 }
 
 init();

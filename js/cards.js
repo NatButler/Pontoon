@@ -1,88 +1,46 @@
 'use strict';
-var deck, table;
-var players = new Dictionary();
-var cutVals = new Dictionary({
-	"A": 14,
- 	"2": 2,
- 	"3": 3,
-	"4": 4,
-	"5": 5,
-	"6": 6,
-	"7": 7,
-	"8": 8,
-	"9": 9,
-	"T": 10,
-	"J": 11,
-	"Q": 12,
-	"K": 13
-});
-var cardVals = new Dictionary({
-	"A": 11,
- 	"2": 2,
- 	"3": 3,
-	"4": 4,
-	"5": 5,
-	"6": 6,
-	"7": 7,
-	"8": 8,
-	"9": 9,
-	"T": 10,
-	"J": 10,
-	"Q": 10,
-	"K": 10
-});
+var deck, table, 
+	players = new Dictionary(),
+	cutVals = new Dictionary({ // Pass in as config obj? Card vals specific to game, aces high/low etc.
+		"A": 14, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "T": 10, "J": 11, "Q": 12, "K": 13
+	}),
+	cardVals = new Dictionary({
+		"A": 11, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "T": 10, "J": 10, "Q": 10, "K": 10
+	});
 
 
-// HELPER FUNCTIONS
-function randomInt(min, max) {
-	return Math.floor(Math.random() * (max - min + 1) + min);
+// DICTIONARY CONSTRUCTOR
+function Dictionary(startValues) {
+	this.values = startValues || {};
 }
 
-function sum(acc, item) {
-	return acc + item;
+Dictionary.prototype.store = function(name, value) {
+	return this.values[name] = value;
 }
 
-function forEach(array, action) {
-	for (var i = 0, len = array.length; i < len; i++) {
-		action(array[i]);
-	}
+Dictionary.prototype.lookup = function(name) {
+	return this.values[name];
 }
 
-function forEachIn(object, action) {
-	for (var property in object) {
-		if (Object.prototype.hasOwnProperty.call(object, property)) {
-			action(property, object[property]);
-		}
-	}
+Dictionary.prototype.contains = function(name, obj) {
+	var obj = obj ? obj : this.values;
+	return Object.prototype.propertyIsEnumerable.call(obj, name);
 }
 
-function findDuplicates(arr) {
-	var newArr = arr.slice().sort();
-	for (var i = 0; i < arr.length; i++) {
-		if (i > 0 && newArr[i] === newArr[i-1]) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function highestCard(arr) {
-	var max = arr[0], index = 0;
-	for (var i = 1; i < arr.length; i++) {
-	    if (arr[i] > max) {
-	        index = i;
-	        max = arr[i];
-	    }
-	}
-	return index;
+Dictionary.prototype.each = function(action) {
+	forEachIn(this.values, action);
 }
 
 
 // CARD CONSTRUCTOR
-function Card(rank, suit, value) {
+function Card(rank, suit, val) {
 	this.rank = rank;
 	this.suit = suit;
-	if (value) { this.value = value; }
+	if (val) { this.value = val; }
+}
+
+Card.prototype.name = function() {
+	return this.rank + this.suit;
 }
 
 
@@ -92,7 +50,7 @@ function Deck() {
 	this.ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
 	this.cards = new Array(this.suits.length * this.ranks.length);
 	this.buildDeck();
-	return this;
+	// return this.cards;
 }
 
 Deck.prototype.cardAt = function(pos) {
@@ -146,26 +104,21 @@ Deck.prototype.cut = function() {
 	return this.cardAt( randomInt(0, this.cards.length-1) );
 }
 
-Deck.prototype.deal = function(order) {
-	for (var i = 0; i < order.length; i++) {
-		var player = players.lookup(order[i]);
-		player.hand.add( this.twist() );
-
-		if ( players.contains(player, 'splitHand') ) { // Possibly not necessary
-			console.log('Split hand');
-			player.splitHand.add( this.twist() );
-			i--;
+Deck.prototype.deal = function(order, amount) {
+	do {
+		for (var i = 0, len = order.length; i < len; i++) {
+			var player = players.lookup(order[i]);
+			player.hand.add( this.cards.pop() );
 		}
-	}
+		amount--;
+	} while (amount)
+
+	$.publish('dealt', order);
 }
 
-Deck.prototype.twist = function() {
-	return this.cards.pop();
-}
-
-Deck.prototype.addToDeck = function(hand) {
-	for (var i = 0; i < hand.length; i++) {
-		this.cards.unshift(hand[i]);
+Deck.prototype.returnToDeck = function(cards) {
+	for (var i = 0, len = cards.length; i < len; i++) {
+		this.cards.unshift(cards[i]);
 	}
 }
 
@@ -175,12 +128,13 @@ function Table(loStake, hiStake) {
 	this.loStake = loStake;
 	this.hiStake = hiStake;
 	this.dealOrder = [];
+	this.banker;
 
 	deck = new Deck();
 }
 
-Table.prototype.addPlayer = function(name) {
-	this.dealOrder.push( name );
+Table.prototype.addToTable = function(id) {
+	this.dealOrder.push( id );
 }
 
 Table.prototype.setStakes = function(lo, hi) {		// Probably not be necessary as set when creating new Table()
@@ -188,29 +142,30 @@ Table.prototype.setStakes = function(lo, hi) {		// Probably not be necessary as 
 	this.hiStake = hi;
 }
 
-Table.prototype.determineBanker = function() {
+Table.prototype.determineDealer = function() {
 	var cutCards = [];
-	for (var i = 0; i < this.dealOrder.length; i++) {
-		var cutCard = players.lookup(this.dealOrder[i]).cutDeck();
-		cutCards.push( cutVals.lookup(cutCard.rank) );
+	while (!cutCards.length) {
+		for (var i = 0, len = this.dealOrder.length; i < len; i++) {
+			var cutCard = players.lookup(this.dealOrder[i]).cutDeck();
+			cutCards.push( cutVals.lookup(cutCard.rank) );
+		}
+		if ( findDuplicates(cutCards) ) { cutCards = []; }
 	}
-	if ( !findDuplicates(cutCards) ) {
-		this.banker = highestCard(cutCards);
-		// this.setDealOrder();
-		return this.banker;
-	} else {
-		this.determineBanker();
-	}
+	return this.banker = 'P_'+highestCard(cutCards);
 }
 
-Table.prototype.setDealOrder = function() { 		// Currently uses index to represent banker - perhaps use name instead
+Table.prototype.setDealOrder = function() {
 	var order = [];
 	for (var i = 0, len = this.dealOrder.length; i < len; i++) {
-		if (i !== this.banker) { order.push(table.dealOrder[i]); }
+		if (this.dealOrder[i] != this.banker) { order.push(this.dealOrder[i]); }
 	}
-	order.push(this.dealOrder[this.banker]);
-	this.dealOrder = order;
-	return this.dealOrder;
+	order.push(this.banker);
+	return this.dealOrder = order;
+}
+
+Table.prototype.deal = function() {
+	deck.deal(this.dealOrder);
+	$.publish('dealt', this.dealOrder);
 }
 
 Table.prototype.compareHands = function() {
@@ -242,8 +197,20 @@ Player.prototype.splitHand = function() {
 	// this.bet(this.bet);			// Should be called when splitHand is called
 }
 
+Player.prototype.buy = function(val) {
+
+}
+
+Player.prototype.twist = function() {
+	deck.deal([this.id]);
+}
+
+Player.prototype.stick = function() {
+	// Return hand total, state, name?
+}
+
 Player.prototype.bust = function() {
-	deck.addToPack(this.hand.cards);
+	deck.returnToDeck(this.hand.cards);
 	this.hand = newHand();
 }
 
@@ -257,15 +224,8 @@ function Hand(card) {
 
 Hand.prototype.add = function(card) {
 	this.cards.push(card);
+	$.publish('handUpdate', this);
 	// this.value += card.value;
-}
-
-Hand.prototype.stick = function() {
-	// Return hand total, state, name?
-}
-
-Hand.prototype.bust = function() {
-
 }
 
 Hand.prototype.check = function() {
@@ -273,7 +233,7 @@ Hand.prototype.check = function() {
 
 }
 
-Hand.prototype.total = function() { // Return aces high if total <= 21
+Hand.prototype.total = function() { // Aces high if total <= 21
 	var handVal = [];
 
 	for (var i = 0; i < this.cards.length; i++) {
@@ -294,24 +254,44 @@ Hand.prototype.status = function() { 					// Needs completing
 }
 
 
-// DICTIONARY CONSTRUCTOR
-function Dictionary(startValues) {
-	this.values = startValues || {};
+// HELPER FUNCTIONS
+function randomInt(min, max) {
+	return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-Dictionary.prototype.store = function(name, value) {
-	this.values[name] = value;
+function sum(acc, item) {
+	return acc + item;
 }
 
-Dictionary.prototype.lookup = function(name) {
-	return this.values[name];
+function forEach(arr, action) {
+	for (var i = 0, len = arr.length; i < len; i++) {
+		action(arr[i]);
+	}
 }
 
-Dictionary.prototype.contains = function(name, obj) {
-	var obj = obj ? obj : this.values;
-	return Object.prototype.propertyIsEnumerable.call(obj, name);
+function forEachIn(object, action) {
+	for (var property in object) {
+		if (Object.prototype.hasOwnProperty.call(object, property)) {
+			action(property, object[property]);
+		}
+	}
 }
 
-Dictionary.prototype.each = function(action) {
-	forEachIn(this.values, action);
+function findDuplicates(arr) {
+	var newArr = arr.slice().sort();
+	for (var i = 0, len = arr.length; i < len; i++) {
+		if (i > 0 && newArr[i] === newArr[i-1]) { return true; }
+	}
+	return false;
+}
+
+function highestCard(arr) {
+	var max = arr[0], idx = 0;
+	for (var i = 1, len = arr.length; i < len; i++) {
+	    if (arr[i] > max) {
+	        idx = i;
+	        max = arr[i];
+	    }
+	}
+	return idx;
 }
