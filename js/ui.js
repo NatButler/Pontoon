@@ -1,5 +1,5 @@
 'use strict';
-var newGameButton, addPlayerButton, cutDeckButton, dealButton, userTemplate, playersDiv, stakesElem, twistButtons;
+var newGameButton, addPlayerButton, cutDeckButton, dealButton, userTemplate, playersDiv, stakesElem, bankerDisplay, twistButtons, splitHandButton;
 
 
 // PUB-SUB
@@ -19,23 +19,37 @@ var newGameButton, addPlayerButton, cutDeckButton, dealButton, userTemplate, pla
 
 function init() {
 	cache();
-	newGameButton.addEventListener('click', gameStart);
+	newGameButton.addEventListener('click', newGame);
+
+	gameStart();
+	addPlayer('Nat');
+	addPlayer('Joe');
+	addPlayer('Brian');
 }
 
 function cache() {
 	stakesElem = document.getElementById('stakes');
+	bankerDisplay = document.getElementById('banker');
 	newGameButton = document.getElementById('new-game');
 	addPlayerButton = document.getElementById('add-player');
 	cutDeckButton = document.getElementById('cut-deck');
 	dealButton = document.getElementById('deal');
-	playersDiv = document.getElementById('players');
+	playersDiv = document.getElementById('container');
 	userTemplate = document.getElementById('user-template').innerHTML.trim();
 }
 
 function bindEvents() {
 	addPlayerButton.addEventListener('click', addPlayer);
 	cutDeckButton.addEventListener('click', () => { cutForBanker(); });
-	dealButton.addEventListener('click', () => { table.deal(); displayHand(table.dealOrder); twistButtons = document.getElementsByClassName('twist'); registerEventHandlers(twistButtons, 'click', twist); });
+	dealButton.addEventListener('click', () => { 
+		table.deal(); displayHand(table.dealOrder);
+
+		twistButtons = document.getElementsByClassName('twist');
+		registerEventHandlers(twistButtons, 'click', twist);
+
+		splitHandButton = document.getElementsByClassName('split');
+		registerEventHandlers(splitHandButton, 'click', splitHand);
+	});
 }
 
 function gameStart() {
@@ -47,14 +61,24 @@ function gameStart() {
 	bindEvents();
 }
 
-function addPlayer() {
-	var name = prompt('Enter player name.');
+function newGame() {
+	deck = new Deck();
+	deck.shuffle();
+	for (var i = 0, len = table.dealOrder.length; i < len; i++) {
+		var player = players.lookup(table.dealOrder[i]);
+
+		player.hand = new Hand();
+		document.getElementById('hand_' + player.id).innerHTML = '';
+		document.getElementById('hand-total_' + player.id).innerHTML = '';
+	}
+}
+
+function addPlayer(name) {
+	var name = name ? name : prompt('Enter player name.');
 	if (!name) { }
 	else if (name === '') { addPlayer(); } 
 	else {
-		var id = 'P_'+table.dealOrder.length;
-		players.store( id, new Player(name, id) );
-		table.addToTable(id);
+		var id = table.addToTable(name);
 		displayPlayer( players.lookup(id) );
 	}
 }
@@ -70,15 +94,19 @@ function displayPlayer(player) {
 }
 
 function cutForBanker() {
-	var banker = table.determineDealer(),
-		playerDiv = document.getElementById( banker.toString() );
-	
-	if (banker || banker === 0) {
-		playerDiv.children(h3).className += ' banker';
-		displayCut();
-	}
+	if (!table.banker) {
+		var banker = table.determineDealer(),
+			nameDisplay = document.getElementById( 'player_' + banker );
+		
+		if (banker || banker === 0) {
+			nameDisplay.className += ' banker';
+			bankerDisplay.innerHTML = players.lookup(banker).name;
+			displayCut();
+		}
 
-	table.setDealOrder();
+		table.setDealOrder();
+		cutDeckButton.setAttribute('disabled', 'true');
+	}
 }
 
 function displayCut() {
@@ -104,13 +132,13 @@ function displayHand(order) {
 	}
 }
 
-function splitHand() {
-	// Add new player display (hand) next to original. This hand is played after the original has finished it's turn
-	splitHandButton = document.getElementById('split-hand');
+function checkHand() {
 
 }
 
-function checkHand() {
+function splitHand() {
+	// Add new player display (hand) next to original. This hand is played after the original has finished it's turn
+	splitHandButton = document.getElementById('split-hand');
 
 }
 

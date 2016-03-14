@@ -1,7 +1,7 @@
 'use strict';
 var deck, table, 
 	players = new Dictionary(),
-	cutVals = new Dictionary({ // Pass in as config obj? Card vals specific to game, aces high/low etc.
+	cutVals = new Dictionary({ // Pass in as part of config obj? Card vals specific to game, aces high/low etc.
 		"A": 14, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "T": 10, "J": 11, "Q": 12, "K": 13
 	}),
 	cardVals = new Dictionary({
@@ -129,15 +129,19 @@ function Table(loStake, hiStake) {
 	this.hiStake = hiStake;
 	this.dealOrder = [];
 	this.banker;
+	this.pot;
 
-	deck = new Deck();
+	deck = new Deck(); // Pass through config to new Deck. Why declare deck here?
 }
 
-Table.prototype.addToTable = function(id) {
-	this.dealOrder.push( id );
+Table.prototype.addToTable = function(name) {
+	var id = 'P_'+this.dealOrder.length;
+	this.dealOrder.push(id);
+	players.store( id, new Player(id, name) );
+	return id;
 }
 
-Table.prototype.setStakes = function(lo, hi) {		// Probably not be necessary as set when creating new Table()
+Table.prototype.setStakes = function(lo, hi) {		// Probably not necessary as set on new Table
 	this.loStake = lo;
 	this.hiStake = hi;
 }
@@ -165,7 +169,6 @@ Table.prototype.setDealOrder = function() {
 
 Table.prototype.deal = function() {
 	deck.deal(this.dealOrder);
-	$.publish('dealt', this.dealOrder);
 }
 
 Table.prototype.compareHands = function() {
@@ -173,14 +176,19 @@ Table.prototype.compareHands = function() {
 
 }
 
+Table.prototype.pot = function() {
+
+}
+
 
 // PLAYER CONSTRUCTOR
-function Player(name, id, chips) {
+function Player(id, name, chips) { 	
+	// Need to deal with split hands - new player or new hand? Perhaps hands should be associated with players through IDs and then handle hands separately. Or indicate which hand is being played
 	this.name = name;
 	this.id = id;
 	this.chips = chips ? chips : 5000;
 	this.hand = new Hand();
-	this.bet = 0;
+	this.bets = [];
 }
 
 Player.prototype.cutDeck = function() {
@@ -189,15 +197,15 @@ Player.prototype.cutDeck = function() {
 
 Player.prototype.bet = function(val) {
 	this.chips -= val;
-	this.bet += val;
+	this.bets.push(val);
 }
 
 Player.prototype.splitHand = function() {
 	this.splitHand = new Hand( this.hand.cards.pop() );
-	// this.bet(this.bet);			// Should be called when splitHand is called
+	this.splitBets.push(this.bets[0]);
 }
 
-Player.prototype.buy = function(val) {
+Player.prototype.buy = function() {
 
 }
 
@@ -225,7 +233,6 @@ function Hand(card) {
 Hand.prototype.add = function(card) {
 	this.cards.push(card);
 	$.publish('handUpdate', this);
-	// this.value += card.value;
 }
 
 Hand.prototype.check = function() {
@@ -233,7 +240,7 @@ Hand.prototype.check = function() {
 
 }
 
-Hand.prototype.total = function() { // Aces high if total <= 21
+Hand.prototype.total = function() { // Needs completing
 	var handVal = [];
 
 	for (var i = 0; i < this.cards.length; i++) {
@@ -285,7 +292,7 @@ function findDuplicates(arr) {
 	return false;
 }
 
-function highestCard(arr) {
+function highestCard(arr) { // Returns index of highest value
 	var max = arr[0], idx = 0;
 	for (var i = 1, len = arr.length; i < len; i++) {
 	    if (arr[i] > max) {

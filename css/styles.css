@@ -13,8 +13,9 @@ h1 {
 	margin: 5px;
 }
 
-h4 {
+header h4 {
 	display: inline;
+	margin-right: 15px;
 }
 
 #controls {
@@ -46,7 +47,7 @@ h4 {
 }
 
 .banker {
-	background: #ccc;
+
 }
 
 .Diamonds, .Hearts {

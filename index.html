@@ -12,6 +12,8 @@
 	<h1>Pontoon</h1>
 
 	<h4>Stakes: <span id="stakes"></span></h4>
+	<h4>Banker: <span id="banker"></span></h4>
+	<h4>Pot: <span id="pot"></span></h4>
 
 	<div id="controls">
 		<button id="new-game">New game</button>
@@ -39,7 +41,7 @@
 
 			<!--<button id="cut_{{id}}">Cut deck</button>-->
 			<button id="bet_{{id}}">Place bet</button>
-			<button id="split_{{id}}">Split hand</button>
+			<button class="split" id="split_{{id}}">Split hand</button>
 			<button class="twist" id="{{id}}">Twist</button>
 			<button id="stick_{{id}}">Stick</button>
 			<button id="buy_{{id}}">Buy one</button>
@@ -53,8 +55,8 @@
 
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
-<script src="js/ui.js"></script>
 <script src="js/cards.js"></script>
+<script src="js/ui.js"></script>
 <script src="js/charmap.js"></script>
 
 </body>
