@@ -1,7 +1,5 @@
 'use strict';
-var deck, table, 
-	players = new Dictionary(),
-	cutVals = new Dictionary({ // Pass in as part of config obj? Card vals specific to game, aces high/low etc.
+var cutVals = new Dictionary({ // Pass in as part of config obj? Card vals specific to game, aces high/low etc.
 		"A": 14, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "T": 10, "J": 11, "Q": 12, "K": 13
 	}),
 	cardVals = new Dictionary({
@@ -43,12 +41,17 @@ Card.prototype.name = function() {
 	return this.rank + this.suit;
 }
 
+Card.prototype.setVal = function(val) {
+	this.value = val;
+}
+
 
 // DECK CONSTRUCTOR
-function Deck() {
+function Deck(config) {
 	this.suits = ['Clubs', 'Diamonds', 'Hearts', 'Spades'];
 	this.ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
 	this.cards = new Array(this.suits.length * this.ranks.length);
+	this.cardVals = config.cardVals;
 	this.buildDeck();
 	// return this.cards;
 }
@@ -64,7 +67,7 @@ Deck.prototype.setCardAt = function(pos, card) {
 Deck.prototype.buildDeck = function() {
 	for (var s = 0; s < this.suits.length; s++) {
 		for (var r = 0; r < this.ranks.length; r++) {
-			this.setCardAt( s * this.ranks.length + r, new Card(this.ranks[r], this.suits[s], cardVals.lookup(this.ranks[r])) );
+			this.setCardAt( s * this.ranks.length + r, new Card(this.ranks[r], this.suits[s], this.cardVals.lookup(this.ranks[r])) );
 		}
 	}
 }
@@ -107,13 +110,13 @@ Deck.prototype.cut = function() {
 Deck.prototype.deal = function(order, amount) {
 	do {
 		for (var i = 0, len = order.length; i < len; i++) {
-			var player = players.lookup(order[i]);
-			player.hand.add( this.cards.pop() );
+			var player = pontoon.players.lookup(order[i]);
+			player.hand.add( this.cards.pop(), order[i] );
 		}
 		amount--;
 	} while (amount)
 
-	$.publish('dealt', order);
+	$.publish('dealt');
 }
 
 Deck.prototype.returnToDeck = function(cards) {
@@ -123,34 +126,51 @@ Deck.prototype.returnToDeck = function(cards) {
 }
 
 
-// TABLE CONSTRUCTOR
-function Table(loStake, hiStake) {
+// PONTOON CONSTRUCTOR
+function Pontoon(loStake, hiStake) {
 	this.loStake = loStake;
 	this.hiStake = hiStake;
-	this.dealOrder = [];
-	this.banker;
-	this.pot;
+	this.table = new Table();
+	this.players = new Dictionary();
+	this.gameState;
+}
 
-	deck = new Deck(); // Pass through config to new Deck. Why declare deck here?
+Pontoon.prototype.setStakes = function(lo, hi) {
+	this.loStake = lo;
+	this.hiStake = hi;
+}
+
+Pontoon.prototype.setState = function(state) {
+	this.gameState = state;
+	$.publish(this.gameState);
+}
+
+
+// TABLE CONSTRUCTOR
+function Table() {
+	this.dealOrder = [];
+	this.playerTurn = [];
+	this.banker;
+	this.state;
+	this.hands = [];
+
+	this.deck = new Deck({
+		cardVals: cardVals
+	});
 }
 
 Table.prototype.addToTable = function(name) {
 	var id = 'P_'+this.dealOrder.length;
 	this.dealOrder.push(id);
-	players.store( id, new Player(id, name) );
+	pontoon.players.store( id, new Player(id, name) );
 	return id;
-}
-
-Table.prototype.setStakes = function(lo, hi) {		// Probably not necessary as set on new Table
-	this.loStake = lo;
-	this.hiStake = hi;
 }
 
 Table.prototype.determineDealer = function() {
 	var cutCards = [];
 	while (!cutCards.length) {
 		for (var i = 0, len = this.dealOrder.length; i < len; i++) {
-			var cutCard = players.lookup(this.dealOrder[i]).cutDeck();
+			var cutCard = pontoon.players.lookup(this.dealOrder[i]).cutDeck();
 			cutCards.push( cutVals.lookup(cutCard.rank) );
 		}
 		if ( findDuplicates(cutCards) ) { cutCards = []; }
@@ -168,15 +188,24 @@ Table.prototype.setDealOrder = function() {
 }
 
 Table.prototype.deal = function() {
-	deck.deal(this.dealOrder);
+	this.deck.deal(this.dealOrder);
+}
+
+Table.prototype.turns = function() {
+	if (this.playerTurn.length === 0) {
+		this.playerTurn = [ this.dealOrder[0] ];
+	} else if (this.playerTurn[0] === this.banker) {
+		pontoon.setState('gameFinished');
+	}
+	else {
+		var idx = this.dealOrder.indexOf(this.playerTurn[0]) + 1;
+		this.playerTurn = [this.dealOrder[idx]];
+	}
+	
+	return this.playerTurn[0];
 }
 
 Table.prototype.compareHands = function() {
-	// Compare to bankers hand
-
-}
-
-Table.prototype.pot = function() {
 
 }
 
@@ -191,8 +220,8 @@ function Player(id, name, chips) {
 	this.bets = [];
 }
 
-Player.prototype.cutDeck = function() {
-	return this.cutCard = deck.cut();
+Player.prototype.cutDeck = function() { // Perhaps pass in order to deck.cut instead?
+	return this.cutCard = pontoon.table.deck.cut();
 }
 
 Player.prototype.bet = function(val) {
@@ -200,39 +229,49 @@ Player.prototype.bet = function(val) {
 	this.bets.push(val);
 }
 
-Player.prototype.splitHand = function() {
-	this.splitHand = new Hand( this.hand.cards.pop() );
-	this.splitBets.push(this.bets[0]);
+Player.prototype.betTotal = function() {
+	return this.bets.reduce(sum, 0);
 }
 
-Player.prototype.buy = function() {
+Player.prototype.splitHand = function() {
+	this.splitHand = new Hand( this.hand.cards.pop() );
+	// this.splitBets.push(this.bets[0]);
+	// $.publish('splitHand', this.id);
+}
+
+Player.prototype.buy = function(val) {
+	this.bet(val);
+	this.twist();
+}
+
+Player.prototype.checkHand = function() {
 
 }
 
 Player.prototype.twist = function() {
-	deck.deal([this.id]);
+	pontoon.table.deck.deal([this.id]);
 }
 
 Player.prototype.stick = function() {
-	// Return hand total, state, name?
+	return this.stick = this.hand.status;
 }
 
 Player.prototype.bust = function() {
-	deck.returnToDeck(this.hand.cards);
-	this.hand = newHand();
+	pontoon.table.deck.returnToDeck(this.hand.cards);
+	this.hand = new Hand();
 }
 
 
 // HAND CONSTRUCTOR
 function Hand(card) {
 	this.cards = card ? [card] : [];
-	this.value = 0;
-	this.state; // Soft / hard / bust
+	this.value;
+	this.state;
 }
 
-Hand.prototype.add = function(card) {
+Hand.prototype.add = function(card, id) {
 	this.cards.push(card);
-	$.publish('handUpdate', this);
+	this.total(id);
 }
 
 Hand.prototype.check = function() {
@@ -240,28 +279,103 @@ Hand.prototype.check = function() {
 
 }
 
-Hand.prototype.total = function() { // Needs completing
-	var handVal = [];
+Hand.prototype.total = function(id) { // Needs refactoring
+	var handVal = [],
+		handLen = this.cards.length,
+		aces = 0,
+		total;
 
-	for (var i = 0; i < this.cards.length; i++) {
+	for (var i = 0; i < handLen; i++) {
 		handVal.push(this.cards[i].value);
+		if (this.cards[i].rank == 'A') { aces++; }
 	}
 
-	if (this.state === 'Bust') {
-		return this.state;
-	} else {
-		return handVal.reduce(sum, 0).toString();
+	total = handVal.reduce(sum, 0);
+
+	if (handLen < 2) {
+		this.value = total;
+
+		if (id === pontoon.table.banker) {
+			pontoon.setState('firstDeal');
+		}
+	}
+
+	else if (handLen === 2) {
+		if (total === 21) {
+			this.value = total;
+			this.state = 'Pontoon';
+		} else if (this.cards[0].rank === this.cards[1].rank) {
+			// $.publish('Split', id);
+			if (aces) {
+				this.value = hasAces();
+				this.state = '(Soft)';
+			} else {
+				this.value = total;
+			}
+		} else if (aces) {
+			this.value = total;
+			this.state = '(Soft)';
+		} else {
+			this.value = total;
+		}
+
+		if (id === pontoon.table.banker) {
+			pontoon.setState( 'dealFinished' );
+		}
+	}
+
+	else if (handLen > 2) {
+		if (total > 21 && aces === 0) {
+			this.value = total;
+			this.state = 'Bust';
+		} else if (total > 21 && aces) {
+			this.value = hasAces();
+			if (this.value > 21) {
+				this.state = 'Bust';
+			} else if (this.value === 21 && handLen === 5) {
+				this.state = '5 card trick';
+			} else if (this.value === 21) {
+				this.state = '21';
+			}
+			// else if (this.value >= 11 && aces === 2) {
+			// 	this.state = '(Soft)';
+			// } else {
+			// 	this.state = '(Hard)';
+			// }
+		} else if (total < 21 && aces) {
+			this.state = '(Soft)';
+			this.value = total;
+		} else if (total === 21) {
+			this.value = total;
+			if (handLen === 5) {
+				this.state = '5 card trick';
+			} else if (handLen < 5  && aces === 0) {
+				this.state = '21';
+			} else if (handLen < 5 && aces) {
+				this.state = '(Soft)';
+			}
+		} else {
+			this.value = total;
+		}
+	}
+
+	function hasAces() {
+		for (var i = 1; i <= aces; i++) {
+			if ( (total - (10 * i)) <= 21 ) {
+				if (i === 1 && aces === 2) {
+					pontoon.players.lookup(id).hand.state = '(Soft)';
+				} else {
+					pontoon.players.lookup(id).hand.state = '(Hard)';
+				}
+				return total -= (10 * i);
+			}
+		}
+		return total;
 	}
 }
 
-Hand.prototype.status = function() { 					// Needs completing
-	if (this.cards.rank == 'A' && this.total < 10) {
-		this.state = 'Soft';
-	}
-}
 
-
-// HELPER FUNCTIONS
+// UTILITY FUNCTIONS
 function randomInt(min, max) {
 	return Math.floor(Math.random() * (max - min + 1) + min);
 }

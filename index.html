@@ -13,13 +13,14 @@
 
 	<h4>Stakes: <span id="stakes"></span></h4>
 	<h4>Banker: <span id="banker"></span></h4>
-	<h4>Pot: <span id="pot"></span></h4>
+	<h4>Turn: <span id="turn"></span></h4>
 
 	<div id="controls">
-		<button id="new-game">New game</button>
 		<button id="add-player">Add player</button>
 		<button id="cut-deck">Cut for banker</button>
 		<button id="deal">Deal</button>
+		<button id="new-game" disabled>New game</button>
+		<button id="new-deal" disabled>New deal</button>
 	</div>
 </header>
 
@@ -29,22 +30,22 @@
 <script id="user-template" type="user/player-template">
 	<div class="player-wrapper" id="{{id}}">
 
-		<span class="cut" id="cut_{{id}}"></span>
 		<h3 id="player_{{id}}">{{name}}</h3>
 
+		<span class="cut" id="cut_{{id}}"></span>
 		<span class="hand" id="hand_{{id}}"></span>
+		<span class="hand" id="split-hand-{{id}}"></span>
 
 		<footer>
-			<p>Current hand: <span id="hand-total_{{id}}"></span> <span id="hand-name"></span></p>
+			<p>Current hand: <span id="hand-total_{{id}}"></span> <span id="hand-state_{{id}}"></span></p>
 			<p>Current bet: <span id="bet-total_{{id}}"></span></p>
 			<p>Chips: <span id="chips_{{id}}">{{chips}}</span></p>
 
-			<!--<button id="cut_{{id}}">Cut deck</button>-->
-			<button id="bet_{{id}}">Place bet</button>
-			<button class="split" id="split_{{id}}">Split hand</button>
-			<button class="twist" id="{{id}}">Twist</button>
-			<button id="stick_{{id}}">Stick</button>
-			<button id="buy_{{id}}">Buy one</button>
+			<button class="bet" id="bet-{{id}}" disabled>Place bet</button>
+			<button class="split" id="split-{{id}}" disabled>Split hand</button>
+			<button class="twist" id="twist-{{id}}" disabled>Twist</button>
+			<button class="stick" id="stick-{{id}}" disabled>Stick</button>
+			<button class="buy" id="buy-{{id}}" disabled>Buy one</button>
 
 			<p id="chips_{{id}}"></p>
 		</footer>
