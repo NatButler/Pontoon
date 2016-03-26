@@ -6,7 +6,7 @@ var pontoon, newGameButton, newDealButton, addPlayerButton, cutDeckButton, dealB
 (function( $ ) { // Can't pass arrays with this implementation
 	var o = $( {} );
 	$.each({
-		trigger: 'publish', // 'dealt' [dealOrder], 'handUpdate' [hand]
+		trigger: 'publish',
 		on: 'subscribe',
 		off: 'unsubscribe'
 	}, function(key, val) {
@@ -19,7 +19,6 @@ var pontoon, newGameButton, newDealButton, addPlayerButton, cutDeckButton, dealB
 
 function init() {
 	cache();
-
 	gameStart();
 	addPlayer('Nat');
 	addPlayer('Joe');
@@ -64,16 +63,13 @@ function bindEvents() {
 function gameStart() {
 	pontoon = new Pontoon(50, 500);
 	pontoon.table.deck.shuffle();
-
 	pontoon.setState('gameStart');
-
 	stakesElem.innerHTML = pontoon.loStake + ' / ' + pontoon.hiStake;
-
 	bindEvents();
 }
 
 function newGame() {
-	pontoon.table.deck = new Deck({
+	pontoon.table.deck = new Deck({ // Instead creating new deck, return hands and shuffle
 		cardVals: cardVals
 	});
 	pontoon.table.deck.shuffle();
@@ -136,7 +132,6 @@ function addPlayer(name) {
 
 function displayPlayer(player) {
 	var list = '';
-
 	list += userTemplate.replace(/{{id}}/g, player.id)
 						.replace(/{{name}}/i, player.name)
 						.replace(/{{chips}}/i, player.chips);
@@ -232,7 +227,6 @@ function splitHand() {
 		splitHandSpan = document.getElementById('split-hand-'+id);
 
 	pontoon.players.lookup(id).splitHand();
-
 	displayHand([id]);
 }
 
@@ -246,8 +240,8 @@ function buy() {
 }
 
 function bet() {
-	var id = this.id.split('-');
 	console.log(id[1] + ' placed a bet');
+	var id = this.id.split('-');
 	pontoon.players.lookup(id[1]).bet(pontoon.loStake);
 	this.setAttribute('disabled', true);
 	displayBet(id[1]);

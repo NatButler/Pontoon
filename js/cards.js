@@ -53,7 +53,6 @@ function Deck(config) {
 	this.cards = new Array(this.suits.length * this.ranks.length);
 	this.cardVals = config.cardVals;
 	this.buildDeck();
-	// return this.cards;
 }
 
 Deck.prototype.cardAt = function(pos) {
@@ -115,8 +114,6 @@ Deck.prototype.deal = function(order, amount) {
 		}
 		amount--;
 	} while (amount)
-
-	$.publish('dealt');
 }
 
 Deck.prototype.returnToDeck = function(cards) {
@@ -186,11 +183,6 @@ Table.prototype.setDealOrder = function() {
 		var start = this.dealOrder.splice(bankerIdx+1);
 		this.dealOrder = start.concat(this.dealOrder);
 	}
-
-	// for (var i = 0, len = this.dealOrder.length; i < len; i++) {
-	// 	if (this.dealOrder[i] != this.banker) { order.push(this.dealOrder[i]); }
-	// }
-	// order.push(this.banker);
 	return this.dealOrder;
 }
 
@@ -212,14 +204,9 @@ Table.prototype.turns = function() {
 	return this.playerTurn[0];
 }
 
-Table.prototype.compareHands = function() {
-
-}
-
 
 // PLAYER CONSTRUCTOR
 function Player(id, name, chips) { 	
-	// Need to deal with split hands - new player or new hand? Perhaps hands should be associated with players through IDs and then handle hands separately. Or indicate which hand is being played
 	this.name = name;
 	this.id = id;
 	this.chips = chips ? chips : 5000;
@@ -227,7 +214,7 @@ function Player(id, name, chips) {
 	this.bets = [];
 }
 
-Player.prototype.cutDeck = function() { // Perhaps pass in order to deck.cut instead?
+Player.prototype.cutDeck = function() {
 	return this.cutCard = pontoon.table.deck.cut();
 }
 
@@ -287,11 +274,6 @@ function Hand(card) {
 Hand.prototype.add = function(card, id) {
 	this.cards.push(card);
 	this.total(id);
-}
-
-Hand.prototype.check = function() {
-	// Return total value and state of hand.
-
 }
 
 Hand.prototype.total = function(id) { // Needs refactoring
