@@ -18,7 +18,7 @@
 	<div id="controls">
 		<button id="add-player">Add player</button>
 		<button id="cut-deck">Cut for banker</button>
-		<button id="deal">Deal</button>
+		<button id="deal" disabled>Deal</button>
 		<button id="new-game" disabled>New game</button>
 		<button id="new-deal" disabled>New deal</button>
 	</div>
@@ -37,8 +37,8 @@
 		<span class="hand" id="split-hand-{{id}}"></span>
 
 		<footer>
-			<p>Current hand: <span id="hand-total_{{id}}"></span> <span id="hand-state_{{id}}"></span></p>
-			<p>Current bet: <span id="bet-total_{{id}}"></span></p>
+			<p>Hand: <span id="hand-name_{{id}}"></span> <span id="hand-state_{{id}}"></span></p>
+			<p>Stake: <span id="stake-total_{{id}}"></span></p>
 			<p>Chips: <span id="chips_{{id}}">{{chips}}</span></p>
 
 			<button class="bet" id="bet-{{id}}" disabled>Place bet</button>
@@ -55,7 +55,8 @@
 </div>
 
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script> -->
+<script src="../jQuery_1.10.2.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/charmap.js"></script>

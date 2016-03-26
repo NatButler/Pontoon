@@ -179,12 +179,19 @@ Table.prototype.determineDealer = function() {
 }
 
 Table.prototype.setDealOrder = function() {
-	var order = [];
-	for (var i = 0, len = this.dealOrder.length; i < len; i++) {
-		if (this.dealOrder[i] != this.banker) { order.push(this.dealOrder[i]); }
+	var order = [],
+	bankerIdx = this.dealOrder.indexOf(this.banker);
+
+	if (this.dealOrder.indexOf(this.banker) !== this.dealOrder.length -1) {
+		var start = this.dealOrder.splice(bankerIdx+1);
+		this.dealOrder = start.concat(this.dealOrder);
 	}
-	order.push(this.banker);
-	return this.dealOrder = order;
+
+	// for (var i = 0, len = this.dealOrder.length; i < len; i++) {
+	// 	if (this.dealOrder[i] != this.banker) { order.push(this.dealOrder[i]); }
+	// }
+	// order.push(this.banker);
+	return this.dealOrder;
 }
 
 Table.prototype.deal = function() {
@@ -259,6 +266,13 @@ Player.prototype.stick = function() {
 Player.prototype.bust = function() {
 	pontoon.table.deck.returnToDeck(this.hand.cards);
 	this.hand = new Hand();
+	pontoon.players.lookup(pontoon.table.banker).chips += this.betTotal();
+	this.bets = [];
+}
+
+Player.prototype.returnCards = function() {
+	pontoon.table.deck.returnToDeck(this.hand.cards);
+	this.hand = new Hand();	
 }
 
 
@@ -267,6 +281,7 @@ function Hand(card) {
 	this.cards = card ? [card] : [];
 	this.value;
 	this.state;
+	this.name;
 }
 
 Hand.prototype.add = function(card, id) {
@@ -294,6 +309,7 @@ Hand.prototype.total = function(id) { // Needs refactoring
 
 	if (handLen < 2) {
 		this.value = total;
+		this.name = total.toString();
 
 		if (id === pontoon.table.banker) {
 			pontoon.setState('firstDeal');
@@ -303,20 +319,22 @@ Hand.prototype.total = function(id) { // Needs refactoring
 	else if (handLen === 2) {
 		if (total === 21) {
 			this.value = total;
-			this.state = 'Pontoon';
+			this.name = 'Pontoon';
 		} else if (this.cards[0].rank === this.cards[1].rank) {
-			// $.publish('Split', id);
 			if (aces) {
 				this.value = hasAces();
-				this.state = '(Soft)';
+				this.name = total.toString();
 			} else {
 				this.value = total;
+				this.name = total.toString();
 			}
 		} else if (aces) {
 			this.value = total;
+			this.name = total.toString();
 			this.state = '(Soft)';
 		} else {
 			this.value = total;
+			this.name = total.toString();
 		}
 
 		if (id === pontoon.table.banker) {
@@ -328,34 +346,41 @@ Hand.prototype.total = function(id) { // Needs refactoring
 		if (total > 21 && aces === 0) {
 			this.value = total;
 			this.state = 'Bust';
-		} else if (total > 21 && aces) {
+		} 
+		else if (total > 21 && aces) {
 			this.value = hasAces();
+			this.name = total.toString();
 			if (this.value > 21) {
 				this.state = 'Bust';
-			} else if (this.value === 21 && handLen === 5) {
-				this.state = '5 card trick';
+			} else if (handLen === 5) {
+				this.state = '';
+				this.name = '5 card trick';
 			} else if (this.value === 21) {
-				this.state = '21';
+				this.name = '21';
+				this.state = '';
 			}
-			// else if (this.value >= 11 && aces === 2) {
-			// 	this.state = '(Soft)';
-			// } else {
-			// 	this.state = '(Hard)';
-			// }
-		} else if (total < 21 && aces) {
+		} 
+		else if (total < 21 && aces) {
+			this.value = total;
+			this.name = total.toString();
 			this.state = '(Soft)';
+		} 
+		else if (total <= 21 && handLen === 5) {
+			this.state = '';
+			this.name = '5 card trick';
+		}
+		else if (total === 21) {
 			this.value = total;
-		} else if (total === 21) {
-			this.value = total;
-			if (handLen === 5) {
-				this.state = '5 card trick';
-			} else if (handLen < 5  && aces === 0) {
-				this.state = '21';
+			if (handLen < 5  && aces === 0) {
+				this.name = '21';
+				this.state = '';
 			} else if (handLen < 5 && aces) {
-				this.state = '(Soft)';
+				this.name = total.toString();
 			}
 		} else {
 			this.value = total;
+			this.state = '';
+			this.name = total.toString();
 		}
 	}
 
