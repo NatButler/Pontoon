@@ -111,6 +111,7 @@ Deck.prototype.deal = function(order, amount) {
 		for (var i = 0, len = order.length; i < len; i++) {
 			var player = pontoon.players.lookup(order[i]);
 			player.hand.add( this.cards.pop(), order[i] );
+			console.log(player + player.hand.name );
 		}
 		amount--;
 	} while (amount)
@@ -172,7 +173,7 @@ Table.prototype.determineDealer = function() {
 		}
 		if ( findDuplicates(cutCards) ) { cutCards = []; }
 	}
-	return this.banker = 'P_'+highestCard(cutCards);
+	return this.banker = 'P_'+highestCard(cutCards); // use .reduce()?
 }
 
 Table.prototype.setDealOrder = function() {
@@ -413,7 +414,7 @@ function findDuplicates(arr) {
 	return false;
 }
 
-function highestCard(arr) { // Returns index of highest value
+function highestCard(arr) { // Returns index of highest value: use .reduce()?
 	var max = arr[0], idx = 0;
 	for (var i = 1, len = arr.length; i < len; i++) {
 	    if (arr[i] > max) {

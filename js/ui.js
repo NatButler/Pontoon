@@ -37,7 +37,7 @@ function cache() {
 	turnDisplay = document.getElementById('turn');
 	userTemplate = document.getElementById('user-template').innerHTML.trim();
 	twistButtons = document.getElementsByClassName('twist');
-	splitHandButton = document.getElementsByClassName('split');
+	// splitHandButton = document.getElementsByClassName('split');
 	stickButtons = document.getElementsByClassName('stick');
 	buyButtons = document.getElementsByClassName('buy');
 	betButtons = document.getElementsByClassName('bet');
@@ -51,7 +51,7 @@ function bindEvents() {
 		displayHand(pontoon.table.dealOrder);
 
 		registerEventHandlers(twistButtons, 'click', twist);
-		registerEventHandlers(splitHandButton, 'click', splitHand);
+		// registerEventHandlers(splitHandButton, 'click', splitHand);
 		registerEventHandlers(stickButtons, 'click', stick);
 		registerEventHandlers(buyButtons, 'click', buy);
 		registerEventHandlers(betButtons, 'click', bet);
@@ -220,15 +220,15 @@ function betsFinished() {
 	if (bets === pontoon.table.dealOrder.length -1) { $.publish('betsFinished'); }
 }
 
-function splitHand() {
-	console.log('Split hand');
+// function splitHand() {
+// 	console.log('Split hand');
 
-	var id = pontoon.table.playerTurn[0],
-		splitHandSpan = document.getElementById('split-hand-'+id);
+// 	var id = pontoon.table.playerTurn[0],
+// 		splitHandSpan = document.getElementById('split-hand-'+id);
 
-	pontoon.players.lookup(id).splitHand();
-	displayHand([id]);
-}
+// 	pontoon.players.lookup(id).splitHand();
+// 	displayHand([id]);
+// }
 
 function buy() {
 	console.log('Buy one');
@@ -240,8 +240,8 @@ function buy() {
 }
 
 function bet() {
-	console.log(id[1] + ' placed a bet');
 	var id = this.id.split('-');
+	console.log(id[1] + ' placed a bet');
 	pontoon.players.lookup(id[1]).bet(pontoon.loStake);
 	this.setAttribute('disabled', true);
 	displayBet(id[1]);
@@ -371,39 +371,39 @@ $.subscribe('betsFinished', function() {
 $.subscribe('dealFinished', function() {
 	console.log('Deal finished: turns');
 	dealButton.setAttribute('disabled', true);
+	pontoon.setState('playerTurns');
+});
 
+$.subscribe('playerTurns', function() {
 	if (pontoon.players.lookup(pontoon.table.banker).hand.name === 'Pontoon') {
 		for (var i = 0; i < pontoon.table.dealOrder.length; i++) {
-			if (pontoon.players.lookup(pontoon.table.dealOrder[i]) != pontoon.table.banker) {
+			if (pontoon.table.dealOrder[i] != pontoon.table.banker) {
 				pontoon.players.lookup(pontoon.table.dealOrder[i]).bust();
 			}
 			displayBet(pontoon.table.dealOrder[i]);
 		}
 		displayHand([pontoon.table.banker]);
 		pontoon.setState('gameFinished');
-	} else {
-		pontoon.setState('playerTurns');
-	}
-});
+	} 
+	else {
+		var id = pontoon.table.turns();
 
-$.subscribe('playerTurns', function() {
-	var id = pontoon.table.turns();
+		turnDisplay.innerHTML = pontoon.players.lookup(id).name;
 
-	turnDisplay.innerHTML = pontoon.players.lookup(id).name;
+		if (pontoon.players.lookup(id).hand.name !== 'Pontoon') {
+			document.getElementById('twist-'+id).removeAttribute('disabled');
+			document.getElementById('buy-'+id).removeAttribute('disabled');
 
-	if (pontoon.players.lookup(id).hand.name !== 'Pontoon') {
-		document.getElementById('twist-'+id).removeAttribute('disabled');
-		document.getElementById('buy-'+id).removeAttribute('disabled');
+			if (pontoon.players.lookup(id).hand.value >= 15) {
+				document.getElementById('stick-'+id).removeAttribute('disabled');
+			}
 
-		if (pontoon.players.lookup(id).hand.value >= 15) {
-			document.getElementById('stick-'+id).removeAttribute('disabled');
+			if (pontoon.players.lookup(id).hand.cards[0].rank === pontoon.players.lookup(id).hand.cards[1].rank) {
+				// document.getElementById('split-'+id).removeAttribute('disabled');
+			}
+		} else {
+			$.publish('turnFinished', id);
 		}
-
-		if (pontoon.players.lookup(id).hand.cards[0].rank === pontoon.players.lookup(id).hand.cards[1].rank) {
-			document.getElementById('split-'+id).removeAttribute('disabled');
-		}
-	} else {
-		$.publish('turnFinished', id);
 	}
 });
 
@@ -411,7 +411,7 @@ $.subscribe('turnFinished', function(e, id) {
 	console.log('Next turn: '+id);
 	document.getElementById('twist-'+id).setAttribute('disabled', true);
 	document.getElementById('stick-'+id).setAttribute('disabled', true);
-	document.getElementById('split-'+id).setAttribute('disabled', true);
+	// document.getElementById('split-'+id).setAttribute('disabled', true);
 	document.getElementById('buy-'+id).setAttribute('disabled', true);
 
 	if (id != pontoon.table.banker) {
@@ -430,7 +430,8 @@ $.subscribe('turnFinished', function(e, id) {
 
 		if (nextId === pontoon.table.banker) {
 			if (pontoon.table.hands.length === 0) {
-				pontoon.players.lookup(nextId).bust();
+				console.log('Triggered this..');
+				pontoon.players.lookup(nextId).returnCards();
 				newDealButton.removeAttribute('disabled');
 				return;
 			}
@@ -451,7 +452,7 @@ $.subscribe('turnFinished', function(e, id) {
 			document.getElementById('buy-'+nextId).removeAttribute('disabled');
 
 			if (hand.cards[0].rank === hand.cards[1].rank) {
-				document.getElementById('split-'+nextId).removeAttribute('disabled');
+				// document.getElementById('split-'+nextId).removeAttribute('disabled');
 			}
 		} else {
 			displayHand([nextId]);	
@@ -495,7 +496,7 @@ $.subscribe('gameFinished', function() {
 });
 
 $.subscribe('Twist', function(e, id) {
-	document.getElementById('split-'+id).setAttribute('disabled', true);
+	// document.getElementById('split-'+id).setAttribute('disabled', true);
 	document.getElementById('buy-'+id).setAttribute('disabled', true);
 
 	var hand = pontoon.players.lookup(id).hand;
@@ -532,7 +533,7 @@ $.subscribe('Twist', function(e, id) {
 });
 
 $.subscribe('Buy', function(e, id) {
-	document.getElementById('split-'+id).setAttribute('disabled', true);
+	// document.getElementById('split-'+id).setAttribute('disabled', true);
 
 	var hand = pontoon.players.lookup(id).hand;
 
