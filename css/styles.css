@@ -1,6 +1,6 @@
 body {
 	font-family: HelveticaNeue-Light, 'Helvetica Neue Light', 'Helvetica Neue', HelveticaNeue, HelveticaNeueLT, Helvetica, Arial, 'Lucida Grande', sans-serif;
-	/*background: #ccc;*/
+	background: #f4f4f4;
 }
 
 header {
@@ -8,6 +8,7 @@ header {
 	height: 72px;
 	border-bottom: 1px solid #000;
 	margin-bottom: 10px;
+	background: #e5e5e5;
 }
 
 h1 {
@@ -24,25 +25,37 @@ header h4 {
 #controls {
 	width: 100%;
 	display: block;
+	margin: 5px 0 0 5px;
 }
 
 #container {
 
 }
 
+#display {
+	/*width: auto;*/
+	display: inline;
+	/*text-align: center;*/
+}
+
+.display {
+	min-width: 50px;
+	margin-right: 20px;
+}
+
 .player-wrapper {
 	float: left;
 	width: 24%;
-	height: 470px;
+	height: 300px;
 	position: relative;
-	margin-left: 12px;
-	padding-right: 1px;
+	padding: 12px 1px 0 12px;
 	border-right: 1px solid #000;
+	border-bottom: 1px solid #000;
+	background: #FFFFFF;
 }
 
 .player-wrapper h3 {
-	margin-top: 5px;
-	margin-bottom: 5px;
+	margin: 0 0 5px 0;
 }
 
 .player-wrapper footer {
@@ -60,8 +73,8 @@ header h4 {
 
 .cut {
 	position: absolute;
-	top: -15px;
-	right: 20px;
+	top: -5px;
+	right: 10px;
 	font-size: 60px;
 }
 

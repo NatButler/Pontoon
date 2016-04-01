@@ -111,15 +111,14 @@ Deck.prototype.deal = function(order, amount) {
 		for (var i = 0, len = order.length; i < len; i++) {
 			var player = pontoon.players.lookup(order[i]);
 			player.hand.add( this.cards.pop(), order[i] );
-			console.log(player + player.hand.name );
 		}
 		amount--;
 	} while (amount)
 }
 
-Deck.prototype.returnToDeck = function(cards) {
-	for (var i = 0, len = cards.length; i < len; i++) {
-		this.cards.unshift(cards[i]);
+Deck.prototype.returnToDeck = function(hand) {
+	for (var i = 0, len = hand.length; i < len; i++) {
+		this.cards.unshift(hand[i]);
 	}
 }
 
@@ -239,10 +238,6 @@ Player.prototype.buy = function(val) {
 	this.twist();
 }
 
-Player.prototype.checkHand = function() {
-
-}
-
 Player.prototype.twist = function() {
 	pontoon.table.deck.deal([this.id]);
 }
@@ -330,7 +325,7 @@ Hand.prototype.total = function(id) { // Needs refactoring
 			this.value = total;
 			this.state = 'Bust';
 		} 
-		else if (total > 21 && aces) {
+		else if (total >= 21 && aces) {
 			this.value = hasAces();
 			this.name = total.toString();
 			if (this.value > 21) {

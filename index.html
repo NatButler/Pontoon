@@ -11,15 +11,18 @@
 <header id="hd-main">
 	<h1>Pontoon</h1>
 
-	<h4>Stakes: <span id="stakes"></span></h4>
-	<h4>Banker: <span id="banker"></span></h4>
-	<h4>Turn: <span id="turn"></span></h4>
+	<div id="display">
+		<h4 class="display">Stakes: <span id="stakes"></span></h4>
+		<h4 class="display">Banker: <span id="banker"></span></h4>
+		<h4 class="display">Turn: <span id="turn"></span></h4>
+		<h4 class="display">Status: <span id="status"></span></h4>
+	</div>
 
 	<div id="controls">
 		<button id="add-player">Add player</button>
 		<button id="cut-deck">Cut for banker</button>
 		<button id="deal" disabled>Deal</button>
-		<button id="new-game" disabled>New game</button>
+		<button id="new-shuffle" disabled>New shuffle</button>
 		<button id="new-deal" disabled>New deal</button>
 	</div>
 </header>
@@ -44,8 +47,8 @@
 			<button class="bet" id="bet-{{id}}" disabled>Place bet</button>
 			<!--<button class="split" id="split-{{id}}" disabled>Split hand</button>-->
 			<button class="twist" id="twist-{{id}}" disabled>Twist</button>
-			<button class="stick" id="stick-{{id}}" disabled>Stick</button>
 			<button class="buy" id="buy-{{id}}" disabled>Buy one</button>
+			<button class="stick" id="stick-{{id}}" disabled>Stick</button>
 
 			<p id="chips_{{id}}"></p>
 		</footer>
