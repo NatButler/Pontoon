@@ -22,7 +22,7 @@ function init() {
 
 	// Pass in stakes and players as config object?
 	pontoon = new Pontoon(50, 500);
-	pontoon.table.deck.shuffle();
+	pontoon.table.deck.shuffle(11);
 	stakesElem.innerHTML = pontoon.loStake + ' / ' + pontoon.hiStake;
 
 	addPlayer('Nat');
@@ -98,7 +98,8 @@ function cutForBanker() {
 			displayCut();
 		}
 	}
-	pontoon.setState('gameStart');
+	console.log('Banker: ' + pontoon.players.lookup(banker).name + ' cut the highest card');
+	$.publish('gameStart');
 }
 
 function displayCut() {
@@ -110,7 +111,7 @@ function displayCut() {
 		cutSpan.innerHTML = charMap[player.cutCard.name()];
 	}
 
-	$('.cut').fadeOut(3000);
+	$('.cut').fadeOut(3500);
 }
 
 function displayHand(order) { 
@@ -118,24 +119,22 @@ function displayHand(order) {
 		var hand = pontoon.players.lookup(order[i]).hand,
 			handLen = hand.cards.length -1,
 			card = hand.cards[handLen].name(),
-			handSpan = document.getElementById('hand_' + order[i]),
-			handNameSpan = document.getElementById('hand-name_' + order[i]),
-			handStateSpan = document.getElementById('hand-state_' + order[i]),
 			handTotal = hand.value,
 			handState = hand.state,
-			handName = hand.name;
-
-		console.log(order[i] + ': ' + handName );
+			handName = hand.name,
+			handSpan = document.getElementById('hand_' + order[i]),
+			handNameSpan = document.getElementById('hand-name_' + order[i]),
+			handStateSpan = document.getElementById('hand-state_' + order[i]);
 
 		if (order[i] !== pontoon.table.banker) {
 			handSpan.innerHTML += '<span class=" ' + hand.cards[handLen].suit + '">' + charMap[card] + '</span>';
 			handNameSpan.innerHTML = (handTotal > 21) ? '' : handName;
-			if (handState) { handStateSpan.innerHTML = handState; } else {
-				handStateSpan.innerHTML = '';
-			}
+			if (handState) { handStateSpan.innerHTML = handState; } 
+			else { handStateSpan.innerHTML = ''; }
+			console.log(order[i] + ': ' + handName );
 		}
 		else {
-			if (pontoon.table.playerTurn[0] === pontoon.table.banker || handName === 'Pontoon') {
+			if (pontoon.table.playerTurn[0] === pontoon.table.banker) {
 				handSpan.innerHTML = '';
 				for (var i = 0; i < hand.cards.length; i++) {
 					var card = hand.cards[i].name();
@@ -145,8 +144,10 @@ function displayHand(order) {
 				if (handState) { handStateSpan.innerHTML = handState; } else {
 					handStateSpan.innerHTML = '';
 				}
+				console.log(order[i] + ': ' + handName );
 			} else {
 				handSpan.innerHTML += '<span>' + charMap['Reverse'] + '</span>';
+				console.log(order[i] + ': ' + '(Banker)' );
 			}
 		}
 	}
@@ -154,27 +155,21 @@ function displayHand(order) {
 
 function buy() {
 	console.log('Buy one');
-	var player = pontoon.table.playerTurn;
-	pontoon.players.lookup(player).buy(pontoon.loStake);
-	displayHand([player]);
-	displayBet([player]);
-	$.publish('Buy', player);
+	var id = pontoon.table.playerTurn[0];
+	pontoon.players.lookup(id).buy(pontoon.loStake);
 }
 
 function bet() {
 	var id = this.id.split('-');
-	console.log(id[1] + ' placed a bet');
 	pontoon.players.lookup(id[1]).bet(pontoon.loStake);
+	console.log(id[1] + ' placed a bet of ' + pontoon.loStake);
 	this.setAttribute('disabled', true);
 	displayBet(id[1]);
 }
 
 function twist() {
-	console.log('Twist');
 	var id = pontoon.table.playerTurn[0];
 	pontoon.players.lookup(id).twist();
-	displayHand([id]);
-	$.publish('Twist', id);
 }
 
 function stick() {
@@ -259,7 +254,7 @@ function displayBet(id) {
 	document.getElementById('stake-total_'+id).innerHTML = (player.betTotal() === 0) ? '' : player.betTotal();
 	document.getElementById('chips_'+id).innerHTML = player.chips;
 
-	if (player.betTotal() !== 0 && id !== pontoon.table.banker) { betsFinished(); }
+	if (pontoon.table.playerTurn.length === 0 && pontoon.players.lookup(pontoon.table.banker).hand.name != 'Pontoon') { betsFinished(); }
 }
 
 function betsFinished() {
@@ -268,7 +263,7 @@ function betsFinished() {
 		if ( pontoon.players.lookup(pontoon.table.dealOrder[i]).bets.length > 0 ) { bets++; }
 	}
 
-	if (bets === pontoon.table.dealOrder.length -1 && pontoon.table.playerTurn[0] !== pontoon.table.banker) { $.publish('betsFinished'); }
+	if (bets === pontoon.table.dealOrder.length -1) { $.publish('betsFinished'); }
 }
 
 function returnCards() {
@@ -284,7 +279,7 @@ function newDeal() {
 }
 
 function newShuffle() {
-	pontoon.table.deck.shuffle();
+	pontoon.table.deck.shuffle(11);
 	newShuffleButton.setAttribute('disabled', true);
 	bankerDisplay.innerHTML = pontoon.players.lookup(pontoon.table.banker).name;
 	resetGame();
@@ -331,7 +326,7 @@ $.subscribe('firstDeal', function() {
 	console.log('First deal: initial stakes');
 	bindTurnEvents();
 	displayHand(pontoon.table.dealOrder);
-	pontoon.setState('initialStakes');
+	$.publish('initialStakes');
 });
 
 $.subscribe('initialStakes', function() {
@@ -349,15 +344,23 @@ $.subscribe('betsFinished', function() {
 	dealButton.removeAttribute('disabled');
 });
 
+$.subscribe('secondDeal', function() {
+	console.log('Second deal');
+	displayHand(pontoon.table.dealOrder);
+
+	$.publish('dealFinished');	
+});
+
 $.subscribe('dealFinished', function() {
 	console.log('Deal finished');
 	dealButton.setAttribute('disabled', true);
-	displayHand(pontoon.table.dealOrder);
 
 	if (pontoon.players.lookup(pontoon.table.banker).hand.name === 'Pontoon') {
-		pontoon.setState('gameFinished');
+		pontoon.table.playerTurn = pontoon.table.banker;
+		displayHand([pontoon.table.banker]);
+		$.publish('gameFinished');
 	} else {
-		pontoon.setState('playerTurn');
+		$.publish('playerTurn');
 	}
 });
 
@@ -374,20 +377,23 @@ $.subscribe('playerTurn', function() {
 		player.returnCards();
 		newDealButton.removeAttribute('disabled');
 		return;
-	} else {
-		if (id === pontoon.table.banker) { displayHand([id]); }
-		if (player.hand.name !== 'Pontoon') {
-			document.getElementById('twist-'+id).removeAttribute('disabled');
-
-			if (id != pontoon.table.banker) { document.getElementById('buy-'+id).removeAttribute('disabled'); }
-
-			if (player.hand.value >= 15) {
-				document.getElementById('stick-'+id).removeAttribute('disabled');
-			}
-		} else {
-			$.publish('turnFinished', id);
-		}
+	} 
+	else if (id === pontoon.table.banker) {
+		displayHand([id]);
 	}
+
+	if (player.hand.name !== 'Pontoon') {
+		document.getElementById('twist-'+id).removeAttribute('disabled');
+
+		if (id != pontoon.table.banker) { document.getElementById('buy-'+id).removeAttribute('disabled'); }
+
+		if (player.hand.value >= 15) {
+			document.getElementById('stick-'+id).removeAttribute('disabled');
+		}
+	} else {
+		$.publish('turnFinished', id);
+	}
+
 });
 
 $.subscribe('turnFinished', function(e, id) {
@@ -401,11 +407,10 @@ $.subscribe('turnFinished', function(e, id) {
 			displayBet(id);
 			displayBet(pontoon.table.banker);
 		}
-		pontoon.setState('playerTurn');
+		$.publish('playerTurn');
 	} else {
-		pontoon.setState('gameFinished');
+		$.publish('gameFinished');
 	}
-
 });
 
 $.subscribe('gameFinished', function(e, id) {
@@ -431,6 +436,7 @@ $.subscribe('gameFinished', function(e, id) {
 });
 
 $.subscribe('Twist', function(e, id) {
+	displayHand([id]);
 	document.getElementById('buy-'+id).setAttribute('disabled', true);
 
 	var hand = pontoon.players.lookup(id).hand;
@@ -454,15 +460,19 @@ $.subscribe('Twist', function(e, id) {
 			$.publish('turnFinished', id);
 		} else if (hand.state === 'Bust') {
 			$.publish('turnFinished', id);
-		} else if (hand.name === '21') {
-			$.publish('turnFinished', id);
 		} else if (hand.value === 21 && hand.state != 'Soft') {
 			$.publish('turnFinished', id);
-		}
+		} else if (hand.name === '21') {
+			$.publish('turnFinished', id);
+		} 
 	}
+	console.log('Twist: ' + hand.name);
 });
 
 $.subscribe('Buy', function(e, id) {
+	displayHand([id]);
+	displayBet(id);
+	
 	var hand = pontoon.players.lookup(id).hand;
 
 	if (hand.value >= 15) {
@@ -473,11 +483,12 @@ $.subscribe('Buy', function(e, id) {
 		$.publish('turnFinished', id);
 	} else if (hand.state === 'Bust') {
 		$.publish('turnFinished', id);
-	} else if (hand.name === '21') {
-		$.publish('turnFinished', id);
 	} else if (hand.value === 21 && hand.state != 'Soft') {
 		$.publish('turnFinished', id);
-	}
+	} else if (hand.name === '21') {
+		$.publish('turnFinished', id);
+	} 
+	console.log('Buy one: ' + hand.name);
 });
 
 

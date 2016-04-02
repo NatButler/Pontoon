@@ -56,6 +56,7 @@ header h4 {
 
 .player-wrapper h3 {
 	margin: 0 0 5px 0;
+	text-transform: capitalize;
 }
 
 .player-wrapper footer {

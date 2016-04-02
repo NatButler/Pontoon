@@ -129,17 +129,11 @@ function Pontoon(loStake, hiStake) {
 	this.hiStake = hiStake;
 	this.table = new Table();
 	this.players = new Dictionary();
-	this.gameState;
 }
 
 Pontoon.prototype.setStakes = function(lo, hi) {
 	this.loStake = lo;
 	this.hiStake = hi;
-}
-
-Pontoon.prototype.setState = function(state) {
-	this.gameState = state;
-	$.publish(this.gameState);
 }
 
 
@@ -194,7 +188,7 @@ Table.prototype.turns = function() {
 	if (this.playerTurn.length === 0) {
 		this.playerTurn = [ this.dealOrder[0] ];
 	} else if (this.playerTurn[0] === this.banker) {
-		pontoon.setState('gameFinished');
+		return;
 	}
 	else {
 		var idx = this.dealOrder.indexOf(this.playerTurn[0]) + 1;
@@ -235,11 +229,13 @@ Player.prototype.splitHand = function() {
 
 Player.prototype.buy = function(val) {
 	this.bet(val);
-	this.twist();
+	pontoon.table.deck.deal([this.id]);
+	$.publish('Buy', this.id);
 }
 
 Player.prototype.twist = function() {
 	pontoon.table.deck.deal([this.id]);
+	$.publish('Twist', this.id);
 }
 
 Player.prototype.stick = function() {
@@ -290,7 +286,7 @@ Hand.prototype.total = function(id) { // Needs refactoring
 		this.name = total.toString();
 
 		if (id === pontoon.table.banker) {
-			pontoon.setState('firstDeal');
+			$.publish('firstDeal');
 		}
 	}
 
@@ -316,7 +312,7 @@ Hand.prototype.total = function(id) { // Needs refactoring
 		}
 
 		if (id === pontoon.table.banker) {
-			pontoon.setState( 'dealFinished' );
+			$.publish( 'secondDeal' );
 		}
 	}
 
@@ -324,12 +320,14 @@ Hand.prototype.total = function(id) { // Needs refactoring
 		if (total > 21 && aces === 0) {
 			this.value = total;
 			this.state = 'Bust';
+			this.name = 'Bust';
 		} 
 		else if (total >= 21 && aces) {
 			this.value = hasAces();
 			this.name = total.toString();
 			if (this.value > 21) {
 				this.state = 'Bust';
+				this.name = 'Bust';
 			} else if (handLen === 5) {
 				this.state = '';
 				this.name = '5 card trick';
