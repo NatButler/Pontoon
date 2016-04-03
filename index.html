@@ -14,8 +14,7 @@
 	<div id="display">
 		<div class="display"><h4>Stakes: <span id="stakes"></span></h4></div>
 		<div class="display"><h4 class="display">Banker: <span id="banker"></span></h4></div>
-		<div class="display"><h4 class="display">Turn: <span id="turn"></span></h4></div>
-		<div class="display"><h4 class="display">Status: <span id="status"></span></h4></div>
+		<div class="display"></div>
 	</div>
 
 	<div id="controls">
@@ -24,6 +23,7 @@
 		<button id="deal" disabled>Deal</button>
 		<button id="new-shuffle" disabled>New shuffle</button>
 		<button id="new-deal" disabled>New deal</button>
+		<h4>| <span id="status"></span></h4>
 	</div>
 </header>
 
@@ -37,20 +37,18 @@
 
 		<span class="cut" id="cut_{{id}}"></span>
 		<span class="hand" id="hand_{{id}}"></span>
-		<span class="hand" id="split-hand-{{id}}"></span>
 
 		<footer>
+			<button class="bet" id="bet-{{id}}" disabled>Place bet</button>
 			<p>Hand: <span id="hand-name_{{id}}"></span> <span id="hand-state_{{id}}"></span></p>
 			<p>Stake: <span id="stake-total_{{id}}"></span></p>
 			<p>Chips: <span id="chips_{{id}}">{{chips}}</span></p>
 
-			<button class="bet" id="bet-{{id}}" disabled>Place bet</button>
-			<!--<button class="split" id="split-{{id}}" disabled>Split hand</button>-->
-			<button class="twist" id="twist-{{id}}" disabled>Twist</button>
-			<button class="buy" id="buy-{{id}}" disabled>Buy one</button>
-			<button class="stick" id="stick-{{id}}" disabled>Stick</button>
-
-			<p id="chips_{{id}}"></p>
+			<div class="player-controls" id="controls_{{id}}">
+				<button class="twist" id="twist-{{id}}" disabled>Twist</button>
+				<button class="buy" id="buy-{{id}}" disabled>Buy one</button>
+				<button class="stick" id="stick-{{id}}" disabled>Stick</button>
+			</div>
 		</footer>
 	</div>
 </script>

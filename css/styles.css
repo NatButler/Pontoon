@@ -6,26 +6,33 @@ body {
 header {
 	width: 100%;
 	height: 72px;
-	border-bottom: 1px solid #000;
+	border-bottom: 2px solid #FFF;
 	margin-bottom: 10px;
 	background: #e5e5e5;
 }
 
 h1 {
 	display: inline;
-	padding-right: 50px;
 	margin: 5px;
 }
 
 header h4 {
 	display: inline;
 	margin-right: 15px;
+	font-weight: normal;
 }
 
 #controls {
-	width: 100%;
 	display: block;
-	margin: 0 0 0 5px;
+	margin-top: 3px;
+	padding: 1px 10px 3px 10px;
+	background: #CCC;
+}
+
+#controls h4 {
+	position: absolute;
+	top: 37px;
+	right: 0px;
 }
 
 #container {
@@ -63,23 +70,55 @@ header h4 {
 	bottom: 0px;
 }
 
-.banker {
+.player-controls {
+	width: 321px;
+	margin-bottom: 10px;
+	padding: 5px 4px 7px 8px;
+	background: #F9F9F9;
+}
+
+.player-controls button {
 
 }
 
+.bet {
+	position: absolute;
+	right: 0px;
+	bottom: 59px;
+}
+
+.banker {
+	text-decoration: underline;
+}
+
+#stakes {
+	font-weight: bold;
+}
+
+#banker {
+	font-weight: bold;
+}
+
+#status {
+	font-weight: normal;
+}
+
 .Diamonds, .Hearts {
-	color: #cc0000;
+	color: #b20000;
+}
+
+.Spades, .Clubs {
+	color: #191919;
 }
 
 .cut {
 	position: absolute;
-	top: -5px;
-	right: 10px;
-	font-size: 60px;
+	top: -20px;
+	right: 20px;
+	font-size: 150px;
 }
 
 span.hand {
-	/*padding: 1px;*/
 	font-size: 95px;
 	line-height: normal;
 }
