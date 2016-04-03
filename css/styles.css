@@ -38,7 +38,7 @@ header h4 {
 
 .display {
 	display: inline-block;
-	width: 200px;
+	min-width: 200px;
 	height: 19px;
 }
 
@@ -68,7 +68,7 @@ header h4 {
 }
 
 .Diamonds, .Hearts {
-	color: red;
+	color: #cc0000;
 }
 
 .cut {

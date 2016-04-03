@@ -110,7 +110,6 @@ function displayCut() {
 		cutSpan.className += ' ' + player.cutCard.suit;
 		cutSpan.innerHTML = charMap[player.cutCard.name()];
 	}
-
 	$('.cut').fadeOut(3500);
 }
 
@@ -129,24 +128,28 @@ function displayHand(order) {
 		if (order[i] !== pontoon.table.banker) {
 			handSpan.innerHTML += '<span class=" ' + hand.cards[handLen].suit + '">' + charMap[card] + '</span>';
 			handNameSpan.innerHTML = (handTotal > 21) ? '' : handName;
+
 			if (handState) { handStateSpan.innerHTML = handState; } 
 			else { handStateSpan.innerHTML = ''; }
+			
 			if (order.length > 1) { console.log(order[i] + ': ' + handName ); }
 		}
 		else {
 			if (pontoon.table.playerTurn[0] === pontoon.table.banker) {
 				handSpan.innerHTML = '';
-				for (var i = 0; i < hand.cards.length; i++) {
-					var card = hand.cards[i].name();
-					handSpan.innerHTML += '<span class=" ' + hand.cards[i].suit + '">' + charMap[card] + '</span>';
+				for (var j = 0; j < hand.cards.length; j++) {
+					var card = hand.cards[j].name();
+					handSpan.innerHTML += '<span class=" ' + hand.cards[j].suit + '">' + charMap[card] + '</span>';
 				}
 				handNameSpan.innerHTML = (handTotal > 21 && handState !== '(Soft)' ) ? '' : handName;
+			
 				if (handState) { handStateSpan.innerHTML = handState; } 
 				else { handStateSpan.innerHTML = ''; }
-				if (order.length > 1) { console.log(pontoon.table.banker + ': ' + handName ); }
+			
+				if (order.length > 1) { console.log(order[i] + ': ' + handName ); }
 			} else {
 				handSpan.innerHTML += '<span>' + charMap['Reverse'] + '</span>';
-				console.log(pontoon.table.banker + ': ' + '(Banker)' );
+				console.log(order[i] + ': ' + '(Banker)' );
 			}
 		}
 	}
@@ -183,9 +186,9 @@ function checkHands(order) {
 		if (banker.hand.name === 'Pontoon') {
 			statusDisp.innerHTML = 'Banker has pontoon';
 			banker.chips += player.betTotal();
-			pontoons = 'Banker';
-		} 
-		else if (banker.hand.state === 'Bust') {
+			if (!pontoons) {pontoons = 'Banker';}
+		}
+		else if (banker.hand.name === 'Bust') {
 			statusDisp.innerHTML = 'Banker is bust';
 			player.chips += player.betTotal();
 			if (player.hand.name === 'Pontoon') { var win = player.betTotal() * 2; if (!pontoons) {pontoons = order[i];} }
@@ -262,7 +265,7 @@ function betsFinished() {
 }
 
 function returnCards() {
-	for (var i = 0; i < pontoon.table.dealOrder.length; i++) {
+	for (var i = 0, len = pontoon.table.dealOrder.length; i < len; i++) {
 		pontoon.players.lookup(pontoon.table.dealOrder[i]).returnCards();		
 	}
 }
@@ -346,7 +349,7 @@ $.subscribe('dealFinished', function() {
 	console.log('Deal finished');
 	dealButton.setAttribute('disabled', true);
 	if (pontoon.players.lookup(pontoon.table.banker).hand.name === 'Pontoon') {
-		pontoon.table.playerTurn = pontoon.table.banker;
+		pontoon.table.playerTurn = [pontoon.table.banker];
 		displayHand([pontoon.table.banker]);
 		$.publish('gameFinished');
 	} 
@@ -370,7 +373,6 @@ $.subscribe('playerTurn', function() {
 
 	if (player.hand.name !== 'Pontoon') {
 		document.getElementById('twist-'+id).removeAttribute('disabled');
-
 		if (id != pontoon.table.banker) { document.getElementById('buy-'+id).removeAttribute('disabled'); }
 		if (player.hand.value >= 15) { document.getElementById('stick-'+id).removeAttribute('disabled'); }
 	} 
@@ -380,25 +382,28 @@ $.subscribe('playerTurn', function() {
 
 $.subscribe('turnFinished', function(e, id) {
 	resetPlayerDisplay(id);
-
 	if (id != pontoon.table.banker) {
-		if (pontoon.players.lookup(id).hand.state != 'Bust') {
-			pontoon.table.hands.push(id);
-		} else {
+		if (pontoon.players.lookup(id).hand.state != 'Bust') { pontoon.table.hands.push(id); } 
+		else {
 			pontoon.players.lookup(id).bust();
 			displayBet(id);
 			displayBet(pontoon.table.banker);
 		}
 		$.publish('playerTurn');
-	} else {
-		$.publish('gameFinished');
-	}
+	} 
+	else { $.publish('gameFinished'); }
 });
 
 $.subscribe('gameFinished', function(e, id) {
 	console.log('Turns finished: check hands');
-	if (id) { resetPlayerDisplay(id); }	
-	var result = checkHands(pontoon.table.hands);
+	if (id) { 
+		resetPlayerDisplay(id);
+		var order = pontoon.table.hands;
+	} else { 
+		var order = pontoon.table.dealOrder; 
+	}
+
+	var result = checkHands(order);
 
 	if (!result) {
 		returnCards();
