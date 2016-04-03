@@ -25,7 +25,7 @@ header h4 {
 #controls {
 	width: 100%;
 	display: block;
-	margin: 5px 0 0 5px;
+	margin: 0 0 0 5px;
 }
 
 #container {
@@ -33,14 +33,13 @@ header h4 {
 }
 
 #display {
-	/*width: auto;*/
 	display: inline;
-	/*text-align: center;*/
 }
 
 .display {
-	min-width: 50px;
-	margin-right: 20px;
+	display: inline-block;
+	width: 200px;
+	height: 19px;
 }
 
 .player-wrapper {

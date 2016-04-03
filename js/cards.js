@@ -230,7 +230,7 @@ Player.prototype.splitHand = function() {
 Player.prototype.buy = function(val) {
 	this.bet(val);
 	pontoon.table.deck.deal([this.id]);
-	$.publish('Buy', this.id);
+	$.publish('Twist', [this.id, 'true']);
 }
 
 Player.prototype.twist = function() {
