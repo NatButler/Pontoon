@@ -103,11 +103,11 @@ header h4 {
 	font-weight: normal;
 }
 
-.Diamonds, .Hearts {
+.D, .H {
 	color: #b20000;
 }
 
-.Spades, .Clubs {
+.S, .C {
 	color: #191919;
 }
 
