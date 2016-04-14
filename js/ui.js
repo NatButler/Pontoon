@@ -303,6 +303,7 @@ function newShuffle() {
 
 function resetGame() {
 	dealButton.removeAttribute('disabled');
+	dealButton.focus();	
 	pontoon.table.turn = undefined;
 	pontoon.table.hands = [];
 	statusDisp.innerHTML = '';
@@ -332,6 +333,7 @@ function gameStart() {
 	cutDeckButton.setAttribute('disabled', true);
 	addPlayerButton.setAttribute('disabled', true);
 	dealButton.removeAttribute('disabled');
+	dealButton.focus();
 }
 
 function firstDeal() {
@@ -344,6 +346,7 @@ function initialStakes() {
 	statusDisp.innerHTML = 'First deal: place bets';
 	for (var i = 0; i < betButtons.length; i++) {
 		if (betButtons[i].id !== 'bet-'+pontoon.table.banker) { betButtons[i].removeAttribute('disabled'); }
+		if (i === 0) { betButtons[i].focus(); }
 	}
 }
 
@@ -351,6 +354,7 @@ function betsFinished() {
 	console.log('Bets finsihed');
 	statusDisp.innerHTML = 'Bets placed: turns';
 	dealButton.removeAttribute('disabled');
+	dealButton.focus();
 }
 
 function dealFinished() {
@@ -391,6 +395,7 @@ $.subscribe('playerTurn', function() {
 		pontoon.table.deck.returnToDeck(player.hand.cards);
 		player.hand = new Hand();
 		newDealButton.removeAttribute('disabled');
+		newDealButton.focus();
 		return;
 	} 
 	else if (id === pontoon.table.banker) { revealBankersHand(id); }
@@ -398,7 +403,9 @@ $.subscribe('playerTurn', function() {
 	if (player.hand.name !== 'Pontoon') {
 		document.getElementById('controls_'+id).style.background = '#E5E5E5'; // FEFFD2 FCFCFC activeborder 76A0C7 52708B D1D6DB
 		document.getElementById('controls_'+id).style.outline = '1px solid #E2E2E2'; // E4E5A2
-		document.getElementById('twist-'+id).removeAttribute('disabled');
+		var twistButton = document.getElementById('twist-'+id);
+		twistButton.removeAttribute('disabled');
+		twistButton.focus();
 		if (id != pontoon.table.banker) { document.getElementById('buy-'+id).removeAttribute('disabled'); }
 		if (player.hand.value >= 15) { document.getElementById('stick-'+id).removeAttribute('disabled'); }
 	} 
@@ -435,9 +442,11 @@ $.subscribe('gameFinished', function(e, id) {
 	if (!result) {
 		returnCards();
 		newDealButton.removeAttribute('disabled');
+		newDealButton.focus();
 	} else if (result === 'Banker') {
 		returnCards();
 		newShuffleButton.removeAttribute('disabled');
+		newShuffleButton.focus();
 	} else {
 		var newBanker = pontoon.players.lookup(result);
 		statusDisp.innerHTML += ' | New banker - ' + newBanker.name;
@@ -447,6 +456,7 @@ $.subscribe('gameFinished', function(e, id) {
 		pontoon.table.banker = result;
 		pontoon.table.setDealOrder();
 		newShuffleButton.removeAttribute('disabled');
+		newShuffleButton.focus();
 	}
 });
 

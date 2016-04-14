@@ -269,7 +269,7 @@ Hand.prototype.total = function(id) { // Needs refactoring
 			this.value = handVal;
 			this.name = 'Pontoon';
 		} 
-		else if (this.cards[0].rank === this.cards[1].rank) {
+		else if (this.cards[0].rank === this.cards[1].rank) { // Redundent without split hand functionality, though bug for 2 aces = 22 if block not used
 			if (aces) {
 				this.value = hasAces(this);
 				this.name = handVal.toString();
