@@ -87,11 +87,9 @@ function cutForBanker() {
 	var banker = pontoon.table.determineDealer(),
 		nameDisplay = document.getElementById( 'player_' + banker );
 	
-	if (banker || banker === 0) {
-		nameDisplay.className = 'banker';
-		bankerDisplay.innerHTML = pontoon.players.lookup(banker).name;
-		displayCut();
-	}
+	nameDisplay.className = 'banker';
+	bankerDisplay.innerHTML = pontoon.players.lookup(banker).name;
+	displayCut();
 
 	console.log('Banker: ' + pontoon.players.lookup(banker).name + ' cut the highest card');
 	gameStart();
@@ -250,7 +248,7 @@ function checkHands(order) {
 		}
 
 		function pontoonFiveCard() {
-			if (!pontoons && player.hand.name === 'Pontoon') {pontoons = order[i];}
+			if (!pontoons && player.hand.name === 'Pontoon') { pontoons = order[i]; }
 			banker.chips -= stake * 2;
 			player.chips += stake * 3;
 			playerDiv.style.background = '#EFFFF0';
@@ -345,8 +343,9 @@ function firstDeal() {
 function initialStakes() {
 	statusDisp.innerHTML = 'First deal: place bets';
 	for (var i = 0; i < betButtons.length; i++) {
-		if (betButtons[i].id !== 'bet-'+pontoon.table.banker) { betButtons[i].removeAttribute('disabled'); }
-		if (i === 0) { betButtons[i].focus(); }
+		var id = betButtons[i].id.split('-');
+		if (id[1] !== pontoon.table.banker) { betButtons[i].removeAttribute('disabled'); }
+		if (id[1] === pontoon.table.dealOrder[0]) { betButtons[i].focus(); }
 	}
 }
 
