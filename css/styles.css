@@ -84,7 +84,16 @@ header h4 {
 .bet {
 	position: absolute;
 	right: 0px;
-	bottom: 59px;
+	bottom: 88px;
+}
+
+.stake-range {
+	width: 100px;
+}
+
+.place-bet {
+	position: relative;
+	bottom: 3px;
 }
 
 .banker {

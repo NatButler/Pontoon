@@ -158,9 +158,9 @@ Table.prototype.addToTable = function(id) {
 	return this.dealOrder.push(id);
 }
 
-Table.prototype.removeFromTable = function(id) {
+Table.prototype.playerBust = function(id) {
 	var idx = this.dealOrder.indexOf(id);
-	this.dealOrder.splice(id, 1);
+	this.dealOrder.splice(idx, 1);
 }
 
 Table.prototype.determineDealer = function() {
@@ -207,7 +207,7 @@ Table.prototype.addHand = function(id) {
 function Player(id, name, chips) { 	
 	this.name = name;
 	this.id = id;
-	this.chips = chips ? chips : 5000;
+	this.chips = chips ? chips : 500;
 	this.hand = new Hand();
 	this.bets = [];
 }
@@ -220,7 +220,7 @@ Player.prototype.cutDeck = function() {
 Player.prototype.bet = function(val) {
 	this.chips -= val;
 	this.bets.push(val);
-	return this.bets[this.bets.length-1];
+	return this.betTotal();
 }
 
 Player.prototype.betTotal = function() {
