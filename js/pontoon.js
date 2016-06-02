@@ -10,6 +10,74 @@ function cutForBanker() {
 	gameStart();
 }
 
+function deal() {
+	pontoon.table.deal();
+	dealButton.setAttribute('disabled', true);
+}
+
+function bet() {
+	var id = this.id.split('-'),
+		betValue = document.getElementById('stake-'+id[1]),
+		betValueOutput = betValue.nextElementSibling.innerHTML = '';
+	
+	pontoon.players.lookup(id[1]).bet(+betValue.value);
+	displayBet(id[1]);
+
+	if (pontoon.table.turn) { 
+		pontoon.table.deck.deal([id[1]]);
+		console.log('Buy one: ' + pontoon.players.lookup(id[1]).hand.name + ' - ' + betValue.value);
+	}
+	else { console.log(id[1] + ' placed a bet of ' + betValue.value); }
+
+	this.setAttribute('disabled', true);
+	betValue.setAttribute('disabled', true);
+	betValue.value = betValue.min;
+}
+
+function buy() {
+	var id = pontoon.table.turn,
+		player = pontoon.players.lookup(id),
+		betButton = document.getElementById('bet-'+id),
+		stakeRange = document.getElementById('stake-'+id),
+		twistButton = document.getElementById('twist-'+id),
+		stickButton = document.getElementById('stick-'+id);
+
+	if (player.hand.cards.length === 2) {
+		stakeRange.min = player.bets[0];
+		if (player.bets[0] * 2 > player.chips) { stakeRange.max = player.chips; }
+		else { stakeRange.max = player.bets[0] * 2; }
+	} else {
+		if (player.bets[1] > player.chips) { stakeRange.max = player.chips; }
+		else { stakeRange.max = player.bets[1]; }
+	}
+
+	this.setAttribute('disabled', true);
+	twistButton.setAttribute('disabled', true);
+	stickButton.setAttribute('disabled', true);
+	betButton.removeAttribute('disabled');
+	stakeRange.removeAttribute('disabled');
+	stakeRange.focus();
+}
+
+function twist() {
+	var id = this.id.split('-');
+	pontoon.table.deck.deal([id[1]]);
+	document.getElementById('buy-'+id[1]).setAttribute('disabled', true);
+	console.log('Twist: ' + pontoon.players.lookup(id[1]).hand.name);
+}
+
+function stick() {
+	console.log('Stick: ' + pontoon.players.lookup(pontoon.table.turn).hand.name);
+	$.publish('turnFinished', pontoon.table.turn);
+}
+
+function bust(id) {
+	var player = pontoon.players.lookup(id);
+	pontoon.players.lookup(pontoon.table.banker).chips += player.betTotal();
+	pontoon.table.deck.returnToDeck(player.hand.cards);
+	player.bust();
+}
+
 function twisted(id, hand) { // This could possibly be published in cards.js hand.total()
 	if (hand.value >= 15) { document.getElementById('stick-'+id).removeAttribute('disabled'); }
 	else { document.getElementById('stick-'+id).setAttribute('disabled', true); }
