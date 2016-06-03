@@ -78,7 +78,7 @@ function updateStakeRange() {
 }
 
 function displayCut() {
-	pontoon.players.each(function(id, player) {
+	pontoon.table.players.each(function(id, player) {
 		var cutSpan = document.getElementById( 'cut_' + id );
 		cutSpan.className += ' ' + player.cutCard.suit;
 		cutSpan.innerHTML = charMap[player.cutCard.name()];
@@ -112,7 +112,7 @@ function displayCard(id, hand) {
 }
 
 function revealBankersHand(id) {
-	var hand = pontoon.players.lookup(id).hand,
+	var hand = pontoon.table.players.lookup(id).hand,
 		handSpan = document.getElementById('hand_' + id),
 		handNameSpan = document.getElementById('hand-name_' + id),
 		handStateSpan = document.getElementById('hand-state_' + id);
@@ -131,23 +131,23 @@ function revealBankersHand(id) {
 }
 
 function displayBet(id) {
-	var player = pontoon.players.lookup(id);
+	var player = pontoon.table.players.lookup(id);
 	document.getElementById('stake-total_'+id).innerHTML = (player.betTotal() === 0) ? '' : player.betTotal();
 	document.getElementById('chips_'+id).innerHTML = player.chips;
 
-	if (!pontoon.table.turn && pontoon.players.lookup(pontoon.table.banker).hand.name != 'Pontoon') { checkBets(); }
+	if (!pontoon.table.turn && pontoon.table.players.lookup(pontoon.table.banker).hand.name != 'Pontoon') { checkBets(); }
 }
 
 function checkBets() {
 	var bets = 0;
 	for (var i = 0; i < pontoon.table.dealOrder.length; i++) {
-		if ( pontoon.players.lookup(pontoon.table.dealOrder[i]).bets.length > 0 ) { bets++; }
+		if ( pontoon.table.players.lookup(pontoon.table.dealOrder[i]).bets.length > 0 ) { bets++; }
 	}
 	if (bets === pontoon.table.dealOrder.length -1) { betsFinished(); }
 }
 
 function returnCards() {
-	pontoon.players.each(function(id, player) { 
+	pontoon.table.players.each(function(id, player) { 
 		pontoon.table.deck.returnToDeck(player.hand.cards);
 		player.hand = new Hand();
 	});
@@ -164,7 +164,7 @@ function newShuffle() {
 	console.log('New shuffle');
 	pontoon.table.deck.shuffle(11);
 	newShuffleButton.setAttribute('disabled', true);
-	bankerDisplay.innerHTML = pontoon.players.lookup(pontoon.table.banker).name;
+	bankerDisplay.innerHTML = pontoon.table.players.lookup(pontoon.table.banker).name;
 	resetGame();
 	resetHandDisp(pontoon.table.dealOrder);
 }
@@ -178,7 +178,7 @@ function resetGame() {
 }
 
 function resetHandDisp(order) {
-	pontoon.players.each(function(id, player) {
+	pontoon.table.players.each(function(id, player) {
 		var handSpan = document.getElementById('hand_' + id),
 			stakeRange = document.getElementById('stake-'+id);
 		handSpan.innerHTML = '';
@@ -238,7 +238,7 @@ function betsFinished() {
 function dealFinished() {
 	dealButton.setAttribute('disabled', true);
 	console.log('Deal finished');
-	if (pontoon.players.lookup(pontoon.table.banker).hand.name === 'Pontoon') {
+	if (pontoon.table.players.lookup(pontoon.table.banker).hand.name === 'Pontoon') {
 		pontoon.table.turn = pontoon.table.banker;
 		revealBankersHand(pontoon.table.banker);
 		$.publish('gameFinished');
@@ -263,7 +263,7 @@ $.subscribe('deal', function(e, id, hand) {
 
 $.subscribe('playerTurn', function() {
 	var id = pontoon.table.turns(),	
-		player = pontoon.players.lookup(id);
+		player = pontoon.table.players.lookup(id);
 
 	statusDisp.innerHTML = 'Player turn: ' + player.name;
 	if (id === pontoon.table.banker) { console.log('Turn: banker'); }
@@ -296,7 +296,7 @@ $.subscribe('turnFinished', function(e, id) {
 	resetPlayerDisplay(id);
 
 	if (id != pontoon.table.banker) {
-		if (pontoon.players.lookup(id).hand.state != 'Bust') { pontoon.table.addHand(id); } 
+		if (pontoon.table.players.lookup(id).hand.state != 'Bust') { pontoon.table.addHand(id); } 
 		else {
 			bust(id);
 			document.getElementById('hand_'+id).style.opacity = '0.3';
@@ -327,7 +327,7 @@ $.subscribe('gameFinished', function(e, id) {
 		newShuffleButton.removeAttribute('disabled');
 		newShuffleButton.focus();
 	} else {
-		var newBanker = pontoon.players.lookup(result);
+		var newBanker = pontoon.table.players.lookup(result);
 		statusDisp.innerHTML += ' | New banker - ' + newBanker.name;
 		document.getElementById( 'player_' + newBanker.id ).className = 'banker';
 		document.getElementById( 'player_' + pontoon.table.banker ).className = '';

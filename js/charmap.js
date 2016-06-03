@@ -55,6 +55,6 @@ var charMap = {
     "QS": "\u{1F0AD}",
     "KS": "\u{1F0AE}",
 
-    "Reverse": "\u{1F0A0}",
-    "Joker": "\u{1F0DF}"
+    "Joker": "\u{1F0DF}",
+    "Reverse": "\u{1F0A0}"
 };

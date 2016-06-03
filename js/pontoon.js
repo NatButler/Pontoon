@@ -3,10 +3,10 @@ function cutForBanker() {
 		nameDisplay = document.getElementById( 'player_' + banker );
 	
 	nameDisplay.className = 'banker';
-	bankerDisplay.innerHTML = pontoon.players.lookup(banker).name;
+	bankerDisplay.innerHTML = pontoon.table.players.lookup(banker).name;
 	displayCut();
 
-	console.log('Banker: ' + pontoon.players.lookup(banker).name + ' cut the highest card');
+	console.log('Banker: ' + pontoon.table.players.lookup(banker).name + ' cut the highest card');
 	gameStart();
 }
 
@@ -20,12 +20,12 @@ function bet() {
 		betValue = document.getElementById('stake-'+id[1]),
 		betValueOutput = betValue.nextElementSibling.innerHTML = '';
 	
-	pontoon.players.lookup(id[1]).bet(+betValue.value);
+	pontoon.table.players.lookup(id[1]).bet(+betValue.value);
 	displayBet(id[1]);
 
 	if (pontoon.table.turn) { 
-		pontoon.table.deck.deal([id[1]]);
-		console.log('Buy one: ' + pontoon.players.lookup(id[1]).hand.name + ' - ' + betValue.value);
+		pontoon.table.deal([id[1]]);
+		console.log('Buy one: ' + pontoon.table.players.lookup(id[1]).hand.name + ' - ' + betValue.value);
 	}
 	else { console.log(id[1] + ' placed a bet of ' + betValue.value); }
 
@@ -36,7 +36,7 @@ function bet() {
 
 function buy() {
 	var id = pontoon.table.turn,
-		player = pontoon.players.lookup(id),
+		player = pontoon.table.players.lookup(id),
 		betButton = document.getElementById('bet-'+id),
 		stakeRange = document.getElementById('stake-'+id),
 		twistButton = document.getElementById('twist-'+id),
@@ -61,19 +61,19 @@ function buy() {
 
 function twist() {
 	var id = this.id.split('-');
-	pontoon.table.deck.deal([id[1]]);
+	pontoon.table.deal([id[1]]);
 	document.getElementById('buy-'+id[1]).setAttribute('disabled', true);
-	console.log('Twist: ' + pontoon.players.lookup(id[1]).hand.name);
+	console.log('Twist: ' + pontoon.table.players.lookup(id[1]).hand.name);
 }
 
 function stick() {
-	console.log('Stick: ' + pontoon.players.lookup(pontoon.table.turn).hand.name);
+	console.log('Stick: ' + pontoon.table.players.lookup(pontoon.table.turn).hand.name);
 	$.publish('turnFinished', pontoon.table.turn);
 }
 
 function bust(id) {
-	var player = pontoon.players.lookup(id);
-	pontoon.players.lookup(pontoon.table.banker).chips += player.betTotal();
+	var player = pontoon.table.players.lookup(id);
+	pontoon.table.players.lookup(pontoon.table.banker).chips += player.betTotal();
 	pontoon.table.deck.returnToDeck(player.hand.cards);
 	player.bust();
 }
@@ -91,8 +91,8 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 		if (hand.cards.length === 5 || hand.state === 'Bust') { $.publish('turnFinished', id); } 
 		else if (hand.value === 21 && hand.state === 'Soft') { } 
 		else if (hand.name === '21') { $.publish('turnFinished', id); }		
-		else if (pontoon.players.lookup(id).bets.length === hand.cards.length -1) {
-			if (pontoon.players.lookup(id).chips >= document.getElementById('stake-' + id).min) {
+		else if (pontoon.table.players.lookup(id).bets.length === hand.cards.length -1) {
+			if (pontoon.table.players.lookup(id).chips >= document.getElementById('stake-' + id).min) {
 				document.getElementById('buy-'+id).removeAttribute('disabled');
 			}
 			document.getElementById('twist-'+id).removeAttribute('disabled');
@@ -102,10 +102,10 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 
 function checkHands(order) {
 	var pontoons,
-		banker = pontoon.players.lookup(pontoon.table.banker);
+		banker = pontoon.table.players.lookup(pontoon.table.banker);
 
 	for (var i = 0, len = order.length; i < len; i++) {
-		var player = pontoon.players.lookup(order[i]),
+		var player = pontoon.table.players.lookup(order[i]),
 			playerDiv = document.getElementById(player.id),
 			stake = player.betTotal();
 		if (banker.hand.name === 'Pontoon') {

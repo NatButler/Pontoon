@@ -40,6 +40,132 @@ class Card {
 }
 
 
+// GAME CLASS
+class Game {
+	constructor(config) {
+		this.loStake = config.loStake;
+		this.hiStake = config.hiStake;
+		this.table = new Table(config.cardVals);
+		// this.rules; winning hands etc passed in config
+	}
+
+	addPlayer(name) {
+		var numPlayers = this.table.dealOrder.length;
+		if (numPlayers < 8) {
+			var id = 'P_' + numPlayers;
+			this.table.addToTable(id);
+			return this.table.players.store(id, new Player(id, name));
+		} else {
+			throw new Error('8 players max');
+		}
+	}
+
+	determineDealer() {
+		var cutCards = [];
+		while (!cutCards.length) {
+			for (var i = 0, len = this.table.dealOrder.length; i < len; i++) {
+				var cut = this.table.deck.cut(),
+					player = this.table.players.lookup(this.table.dealOrder[i]);	
+				cutCards.push( player.cutCards(cut) ); 
+			}
+			if ( findDuplicates(cutCards) ) { cutCards = []; }
+		}
+		return this.table.banker = 'P_' + highestCard(cutCards);
+	}
+}
+
+
+// TABLE CLASS
+class Table {
+	constructor(cardVals) {
+		this.players = new Dictionary();
+		this.dealOrder = [];
+		this.turn;
+		this.banker;
+		this.hands = [];
+		this.deck = new Deck({
+			cardVals: cardVals
+		});
+	}
+
+	addToTable(id) {
+		return this.dealOrder.push(id);
+	}
+
+	playerBroke(id) {
+		var idx = this.dealOrder.indexOf(id);
+		this.dealOrder.splice(idx, 1);
+	}
+
+	setDealOrder() {
+		var order = [],
+			bankerIdx = this.dealOrder.indexOf(this.banker);
+
+		if (this.dealOrder.indexOf(this.banker) !== this.dealOrder.length -1) {
+			var start = this.dealOrder.splice(bankerIdx+1);
+			this.dealOrder = start.concat(this.dealOrder);
+		}
+		return this.dealOrder;
+	}
+
+	deal(order, num) {
+		var order = order ? order : this.dealOrder;
+		do {
+			for (var i = 0, len = order.length; i < len; i++) {
+				var player = this.players.lookup(order[i]);
+				player.hand.add( this.deck.deal(), order[i] );
+			}
+			num--;
+		} while (num)
+	}
+
+	turns() {
+		if (!this.turn) { this.turn = this.dealOrder[0]; } 
+		else {
+			var idx = this.dealOrder.indexOf(this.turn) + 1;
+			this.turn = this.dealOrder[idx];
+		}
+		return this.turn;
+	}
+
+	addHand(id) {
+		this.hands.push(id);
+	}
+}
+
+
+// PLAYER CLASS
+class Player {
+	constructor(id, name, chips) {
+		this.name = name;
+		this.id = id;
+		this.chips = chips ? chips : 5000;
+		this.hand = new Hand();
+		this.bets = [];
+	}
+
+	cutCards(card) {
+		this.cutCard = card;
+		return this.cutCard.cutVal;
+	}
+
+	bet(stake) {
+		this.chips -= stake;
+		this.bets.push(stake);
+		return this.betTotal();
+	}
+
+	betTotal() {
+		return this.bets.reduce(sum, 0);
+	}
+
+	bust() {
+		this.hand = new Hand();
+		this.bets = [];
+	}
+}
+
+
 // DECK CLASS
 class Deck {
 	constructor(config) {
@@ -109,140 +235,12 @@ class Deck {
 		return this.cardAt( randomInt(0, this.cards.length-1) );
 	}
 
-	deal(order, amount) {
-		do {
-			for (var i = 0, len = order.length; i < len; i++) {
-				var player = pontoon.players.lookup(order[i]);
-				player.hand.add( this.cards.pop(), order[i] );
-			}
-			amount--;
-		} while (amount)
+	deal() {
+		return this.cards.pop();
 	}
 
 	returnToDeck(hand) {
 		forEach(hand, card => this.cards.unshift(card) );
-	}
-}
-
-
-// GAME CLASS
-class Game {
-	constructor(config) {
-		this.loStake = config.loStake;
-		this.hiStake = config.hiStake;
-		this.table = new Table(config.cardVals);
-		this.players = new Dictionary();
-		// this.rules; winning hands passed in config
-	}
-
-	// setStakes(lo, hi) {
-	// 	this.loStake = lo;
-	// 	this.hiStake = hi;
-	// }
-
-	addPlayer(name) {
-		var numPlayers = this.table.dealOrder.length;
-		if (numPlayers < 8) {
-			var id = 'P_' + numPlayers;
-			this.table.addToTable(id);
-			return this.players.store(id, new Player(id, name));
-		} else {
-			throw new Error('8 players max');
-		}
-	}
-
-	determineDealer() {
-		var cutCards = [];
-		while (!cutCards.length) {
-			this.players.each(function(id, player) { 
-				cutCards.push( player.cutDeck() ); 
-			});
-			if ( findDuplicates(cutCards) ) { cutCards = []; }
-		}
-		return this.table.banker = 'P_' + highestCard(cutCards); // use .reduce()?
-	}
-}
-
-
-// TABLE CLASS
-class Table {
-	constructor(cardVals) {
-		this.dealOrder = [];
-		this.turn;
-		this.banker;
-		this.hands = [];
-		this.deck = new Deck({
-			cardVals: cardVals
-		});
-	}
-
-	addToTable(id) {
-		return this.dealOrder.push(id);
-	}
-
-	playerBroke(id) {
-		var idx = this.dealOrder.indexOf(id);
-		this.dealOrder.splice(idx, 1);
-	}
-
-	setDealOrder() {
-		var order = [],
-			bankerIdx = this.dealOrder.indexOf(this.banker);
-
-		if (this.dealOrder.indexOf(this.banker) !== this.dealOrder.length -1) {
-			var start = this.dealOrder.splice(bankerIdx+1);
-			this.dealOrder = start.concat(this.dealOrder);
-		}
-		return this.dealOrder;
-	}
-
-	deal() {
-		this.deck.deal(this.dealOrder);
-	}
-
-	turns() {
-		if (!this.turn) { this.turn = this.dealOrder[0]; } 
-		else {
-			var idx = this.dealOrder.indexOf(this.turn) + 1;
-			this.turn = this.dealOrder[idx];
-		}
-		return this.turn;
-	}
-
-	addHand(id) {
-		this.hands.push(id);
-	}
-}
-
-
-// PLAYER CLASS
-class Player {
-	constructor(id, name, chips) {
-		this.name = name;
-		this.id = id;
-		this.chips = chips ? chips : 5000;
-		this.hand = new Hand();
-		this.bets = [];
-	}
-
-	cutDeck() {
-		this.cutCard = pontoon.table.deck.cut();
-		return this.cutCard.cutVal;
-	}
-
-	bet(val) {
-		this.chips -= val;
-		this.bets.push(val);
-		return this.betTotal();
-	}
-
-	betTotal() {
-		return this.bets.reduce(sum, 0);
-	}
-
-	bust() {
-		this.hand = new Hand();
-		this.bets = [];
 	}
 }
 
