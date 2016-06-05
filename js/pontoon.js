@@ -1,5 +1,5 @@
 function cutForBanker() {
-	var banker = pontoon.determineDealer(),
+	var banker = pontoon.cutForDealer(),	
 		nameDisplay = document.getElementById( 'player_' + banker );
 	
 	nameDisplay.className = 'banker';
@@ -73,7 +73,7 @@ function stick() {
 
 function bust(id) {
 	var player = pontoon.table.players.lookup(id);
-	pontoon.table.players.lookup(pontoon.table.banker).chips += player.betTotal();
+	pontoon.table.players.lookup(pontoon.banker).chips += player.betTotal();
 	pontoon.table.deck.returnToDeck(player.hand.cards);
 	player.bust();
 }
@@ -82,7 +82,7 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 	if (hand.value >= 15) { document.getElementById('stick-'+id).removeAttribute('disabled'); }
 	else { document.getElementById('stick-'+id).setAttribute('disabled', true); }
 
-	if (id === pontoon.table.banker) {
+	if (id === pontoon.banker) {
 		if (hand.cards.length === 5 || hand.state === 'Bust') { $.publish('gameFinished', id); } 
 		else if (hand.value === 21 && hand.state === 'Soft') { } 
 		else if (hand.name === '21') { $.publish('gameFinished', id); }
@@ -100,9 +100,105 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 	}
 }
 
+function checkHand(hand) { // Needs refactoring
+	var handVal = 0,
+		handLen = hand.cards.length,
+		aces = 0;
+
+	for (var i = 0; i < handLen; i++) {
+		if (hand.cards[i].rank == 'A') { aces++; }
+		handVal += hand.cards[i].value;
+	}
+
+	if (handLen < 2) {
+		hand.value = handVal;
+		hand.name = handVal.toString();
+	}
+
+	else if (handLen === 2) {
+		if (handVal === 21) {
+			hand.value = handVal;
+			hand.name = 'Pontoon';
+		}
+		else if (aces) {
+			hand.value = hasAces(hand);
+			hand.name = handVal.toString();
+		} 
+		else {
+			hand.value = handVal;
+			hand.name = handVal.toString();
+		}
+	}
+
+	else if (handLen > 2) {
+		if (handVal > 21 && !aces) {
+			hand.value = handVal;
+			hand.state = 'Bust';
+			hand.name = 'Bust';
+		}
+		else if (handVal > 21 && aces) {
+			hand.value = hasAces(hand);
+			hand.name = handVal.toString();
+			if (hand.value > 21) {
+				hand.state = 'Bust';
+				hand.name = 'Bust';
+			}
+			else if (handLen === 5) {
+				hand.state = '';
+				hand.name = '5 card trick';
+			}
+			else if (hand.value === 21) {
+				hand.name = '21';
+				hand.state = '';
+			}
+		}
+		else if (handVal < 21 && aces) {
+			hand.value = handVal;
+			hand.name = handVal.toString();
+			hand.state = '(Soft)';
+		} 
+		else if (handVal <= 21 && handLen === 5) {
+			hand.state = '';
+			hand.name = '5 card trick';
+		}
+		else if (handVal === 21) {
+			hand.value = handVal;
+			hand.name = '21';
+			if (handLen < 5 && aces === 0) {
+				hand.state = '';
+			}
+			else if (handLen < 5 && aces) {
+				hand.state = '(Soft)';
+			}
+		}
+		else {
+			hand.value = handVal;
+			hand.state = '';
+			hand.name = handVal.toString();
+		}
+	}
+
+	return hand;
+
+	function hasAces(hand) {
+		for (var i = 1; i <= aces; i++) {
+			if (handVal <= 21) {
+				hand.state = '(Soft)';
+			}
+			else if ( (handVal - (10 * i)) <= 21 ) {
+				if (i === 1 && aces > 1) { hand.state = '(Soft)'; }
+				else { hand.state = '(Hard)'; }
+				return handVal -= (10 * i);
+			}
+
+		}
+		return handVal;
+	}
+}
+
 function checkHands(order) {
 	var pontoons,
-		banker = pontoon.table.players.lookup(pontoon.table.banker);
+		banker = pontoon.table.players.lookup(pontoon.banker);
 
 	for (var i = 0, len = order.length; i < len; i++) {
 		var player = pontoon.table.players.lookup(order[i]),

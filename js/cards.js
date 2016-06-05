@@ -1,52 +1,13 @@
 'use strict';
 
-// DICTIONARY CLASS
-class Dictionary {
-	constructor(startValues) {
-		this.values = startValues || {};
-	}
-
-	store(name, value) {
-		return this.values[name] = value;
-	}
-
-	lookup(name) {
-		return this.values[name];
-	}
-
-	contains(name, val) {
-		var val = val ? this.values.val : this.values;
-		return Object.prototype.propertyIsEnumerable.call(val, name);
-	}
-
-	each(action) {
-		forEachIn(this.values, action);
-	}
-}
-
-
-// CARD CLASS
-class Card {
-	constructor(rank, suit, cutVal, val) {
-		this.rank = rank;
-		this.suit = suit;
-		this.value = val;
-		this.cutVal = cutVal;
-	}
-
-	name() {
-		return this.rank + this.suit;
-	}
-}
-
-
 // GAME CLASS
 class Game {
 	constructor(config) {
 		this.loStake = config.loStake;
 		this.hiStake = config.hiStake;
 		this.table = new Table(config.cardVals);
-		// this.rules; winning hands etc passed in config
+		this.banker;
+		// this.rules; winning hands etc passed in config / require module
 	}
 
 	addPlayer(name) {
@@ -55,12 +16,10 @@ class Game {
 			var id = 'P_' + numPlayers;
 			this.table.addToTable(id);
 			return this.table.players.store(id, new Player(id, name));
-		} else {
-			throw new Error('8 players max');
 		}
 	}
 
-	determineDealer() {
+	cutForDealer() {
 		var cutCards = [];
 		while (!cutCards.length) {
 			for (var i = 0, len = this.table.dealOrder.length; i < len; i++) {
@@ -70,7 +29,8 @@ class Game {
 			}
 			if ( findDuplicates(cutCards) ) { cutCards = []; }
 		}
-		return this.table.banker = 'P_' + highestCard(cutCards);
+		this.table.dealer = 'P_' + highestCard(cutCards);
+		return this.banker = this.table.dealer;
 	}
 }
 
@@ -81,7 +41,7 @@ class Table {
 		this.players = new Dictionary();
 		this.dealOrder = [];
 		this.turn;
-		this.banker;
+		this.dealer;
 		this.hands = [];
 		this.deck = new Deck({
 			cardVals: cardVals
@@ -97,11 +57,11 @@ class Table {
 		this.dealOrder.splice(idx, 1);
 	}
 
-	setDealOrder() {
+	setDealOrder() { // Sorts array so dealer is last
 		var order = [],
-			bankerIdx = this.dealOrder.indexOf(this.banker);
+			bankerIdx = this.dealOrder.indexOf(this.dealer);
 
-		if (this.dealOrder.indexOf(this.banker) !== this.dealOrder.length -1) {
+		if (this.dealOrder.indexOf(this.dealer) !== this.dealOrder.length -1) {
 			var start = this.dealOrder.splice(bankerIdx+1);
 			this.dealOrder = start.concat(this.dealOrder);
 		}
@@ -162,6 +122,21 @@ class Player {
 	bust() {
 		this.hand = new Hand();
 		this.bets = [];
+	}
+}
+
+
+// CARD CLASS
+class Card {
+	constructor(rank, suit, cutVal, val) {
+		this.rank = rank;
+		this.suit = suit;
+		this.value = val;
+		this.cutVal = cutVal;
+	}
+
+	name() {
+		return this.rank + this.suit;
 	}
 }
 
@@ -240,15 +215,15 @@ class Deck {
 	}
 
 	returnToDeck(hand) {
-		forEach(hand, card => this.cards.unshift(card) );
+		forEach( hand, card => this.cards.unshift(card) );
 	}
 }
 
 
 // HAND CLASS
 class Hand {
-	constructor(card) {
-		this.cards = card ? [card] : [];
+	constructor(cards) {
+		this.cards = cards ? cards : [];
 		this.value;
 		this.state;
 		this.name;
@@ -256,109 +231,32 @@ class Hand {
 
 	add(card, id) {
 		this.cards.push(card);
-		this.total(id);
-		$.publish('deal', [id, this]);
+		$.publish('dealt', [id, this]);
+	}
+}
+
+
+// DICTIONARY CLASS
+class Dictionary {
+	constructor(startValues) {
+		this.values = startValues || {};
 	}
 
-	total(id) { // Needs refactoring
-		var handVal = 0,
-			handLen = this.cards.length,
-			aces = 0;
+	store(name, value) {
+		return this.values[name] = value;
+	}
 
-		for (var i = 0; i < handLen; i++) {
-			if (this.cards[i].rank == 'A') { aces++; }
-			handVal += this.cards[i].value;
-		}
+	lookup(name) {
+		return this.values[name];
+	}
 
-		if (handLen < 2) {
-			this.value = handVal;
-			this.name = handVal.toString();
-		}
+	contains(name, val) {
+		var val = val ? this.values.val : this.values;
+		return Object.prototype.propertyIsEnumerable.call(val, name);
+	}
 
-		else if (handLen === 2) {
-			if (handVal === 21) {
-				this.value = handVal;
-				this.name = 'Pontoon';
-			} 
-			else if (this.cards[0].rank === this.cards[1].rank) { // Redundent without split hand functionality, though bug for 2 aces = 22 if block not used
-				if (aces) {
-					this.value = hasAces(this);
-					this.name = handVal.toString();
-				} 
-				else {
-					this.value = handVal;
-					this.name = handVal.toString();
-				}
-			} 
-			else if (aces) {
-				this.value = handVal;
-				this.name = handVal.toString();
-				this.state = '(Soft)';
-			} 
-			else {
-				this.value = handVal;
-				this.name = handVal.toString();
-			}
-		}
-
-		else if (handLen > 2) {
-			if (handVal > 21 && aces === 0) {
-				this.value = handVal;
-				this.state = 'Bust';
-				this.name = 'Bust';
-			} 
-			else if (handVal >= 21 && aces) {
-				this.value = hasAces(this);
-				this.name = handVal.toString();
-				if (this.value > 21) {
-					this.state = 'Bust';
-					this.name = 'Bust';
-				} 
-				else if (handLen === 5) {
-					this.state = '';
-					this.name = '5 card trick';
-				} 
-				else if (this.value === 21) {
-					this.name = '21';
-					this.state = '';
-				}
-			} 
-			else if (handVal < 21 && aces) {
-				this.value = handVal;
-				this.name = handVal.toString();
-				this.state = '(Soft)';
-			} 
-			else if (handVal <= 21 && handLen === 5) {
-				this.state = '';
-				this.name = '5 card trick';
-			}
-			else if (handVal === 21) {
-				this.value = handVal;
-				if (handLen < 5  && aces === 0) {
-					this.name = '21';
-					this.state = '';
-				} 
-				else if (handLen < 5 && aces) {
-					this.name = handVal.toString();
-				}
-			} 
-			else {
-				this.value = handVal;
-				this.state = '';
-				this.name = handVal.toString();
-			}
-		}
-
-		function hasAces(hand) {
-			for (var i = 1; i <= aces; i++) {
-				if ( (handVal - (10 * i)) <= 21 ) {
-					if (i === 1 && aces === 2) { hand.state = '(Soft)'; } 
-					else { hand.state = '(Hard)'; }
-					return handVal -= (10 * i);
-				}
-			}
-			return handVal;
-		}
+	each(action) {
+		forEachIn(this.values, action);
 	}
 }
 
@@ -380,7 +278,7 @@ function forEach(arr, action) {
 
 function forEachIn(object, action) {
 	for (var property in object) {
-		if (Object.prototype.propertyIsEnumerable.call(object, property)) { // Object.prototype.hasOwnProperty.call(object, property)
+		if (Object.prototype.propertyIsEnumerable.call(object, property)) {
 			action(property, object[property]);
 		}
 	}
