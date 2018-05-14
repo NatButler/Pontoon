@@ -59,7 +59,7 @@ function addPlayer(name) {
 	else if (name === '') { addPlayer(); } 
 	else { displayPlayer( pontoon.addPlayer(name) ); }
 
-	if (pontoon.table.dealOrder.length === 8) { addPlayerButton.setAttribute('disabled', true); }
+	if (pontoon.table.dealOrder.length === pontoon.maxPlayers) { addPlayerButton.setAttribute('disabled', true); }
 }
 
 function displayPlayer(player) {
@@ -74,7 +74,7 @@ function displayPlayer(player) {
 
 function updateStakeRange() {
 	var output = this.nextElementSibling;
-    output.value = this.value;
+  output.value = this.value;
 }
 
 function displayCut() {
@@ -95,11 +95,11 @@ function displayCard(id, hand) {
 	}
 	else {
 		var handNameSpan = document.getElementById('hand-name_' + id),
-			handStateSpan = document.getElementById('hand-state_' + id),
-			handLen = hand.cards.length -1,
-			card = hand.cards[handLen].name(),
-			handState = hand.state,
-			handName = hand.name;
+				handStateSpan = document.getElementById('hand-state_' + id),
+				handLen = hand.cards.length -1,
+				card = hand.cards[handLen].name(),
+				handState = hand.state,
+				handName = hand.name;
 
 		handSpan.innerHTML += '<span class=" ' + hand.cards[handLen].suit + '">' + charMap[card] + '</span>';
 		handNameSpan.innerHTML = (hand.value > 21) ? '' : handName;
@@ -113,9 +113,9 @@ function displayCard(id, hand) {
 
 function revealBankersHand(id) {
 	var hand = pontoon.table.players.lookup(id).hand,
-		handSpan = document.getElementById('hand_' + id),
-		handNameSpan = document.getElementById('hand-name_' + id),
-		handStateSpan = document.getElementById('hand-state_' + id);
+			handSpan = document.getElementById('hand_' + id),
+			handNameSpan = document.getElementById('hand-name_' + id),
+			handStateSpan = document.getElementById('hand-state_' + id);
 
 	handSpan.innerHTML = '';
 	for (var i = 0, len = hand.cards.length; i < len; i++) {
@@ -180,7 +180,7 @@ function resetGame() {
 function resetHandDisp(order) {
 	pontoon.table.players.each(function(id, player) {
 		var handSpan = document.getElementById('hand_' + id),
-			stakeRange = document.getElementById('stake-'+id);
+				stakeRange = document.getElementById('stake-'+id);
 		handSpan.innerHTML = '';
 		handSpan.removeAttribute('style');
 
@@ -264,7 +264,7 @@ $.subscribe('dealt', function(e, id, hand) {
 
 $.subscribe('playerTurn', function() {
 	var id = pontoon.table.turns(),	
-		player = pontoon.table.players.lookup(id);
+			player = pontoon.table.players.lookup(id);
 
 	statusDisp.innerHTML = 'Player turn: ' + player.name;
 	if (id === pontoon.table.dealer) { console.log('Turn: banker'); }

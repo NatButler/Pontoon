@@ -1,7 +1,7 @@
 function cutForBanker() {
 	var banker = pontoon.cutForDealer(),	
-		nameDisplay = document.getElementById( 'player_' + banker );
-	
+			nameDisplay = document.getElementById( 'player_' + banker );
+
 	nameDisplay.className = 'banker';
 	bankerDisplay.innerHTML = pontoon.table.players.lookup(banker).name;
 	displayCut();
@@ -17,8 +17,8 @@ function deal() {
 
 function bet() {
 	var id = this.id.split('-'),
-		betValue = document.getElementById('stake-'+id[1]),
-		betValueOutput = betValue.nextElementSibling.innerHTML = '';
+			betValue = document.getElementById('stake-'+id[1]),
+			betValueOutput = betValue.nextElementSibling.innerHTML = '';
 	
 	pontoon.table.players.lookup(id[1]).bet(+betValue.value);
 	displayBet(id[1]);
@@ -36,11 +36,11 @@ function bet() {
 
 function buy() {
 	var id = pontoon.table.turn,
-		player = pontoon.table.players.lookup(id),
-		betButton = document.getElementById('bet-'+id),
-		stakeRange = document.getElementById('stake-'+id),
-		twistButton = document.getElementById('twist-'+id),
-		stickButton = document.getElementById('stick-'+id);
+			player = pontoon.table.players.lookup(id),
+			betButton = document.getElementById('bet-'+id),
+			stakeRange = document.getElementById('stake-'+id),
+			twistButton = document.getElementById('twist-'+id),
+			stickButton = document.getElementById('stick-'+id);
 
 	if (player.hand.cards.length === 2) {
 		stakeRange.min = player.bets[0];
@@ -84,12 +84,12 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 
 	if (id === pontoon.banker) {
 		if (hand.cards.length === 5 || hand.state === 'Bust') { $.publish('gameFinished', id); } 
-		else if (hand.value === 21 && hand.state === 'Soft') { } 
+		else if (hand.value === 21 && hand.state === '(Soft)') { } 
 		else if (hand.name === '21') { $.publish('gameFinished', id); }
 	}
 	else {
 		if (hand.cards.length === 5 || hand.state === 'Bust') { $.publish('turnFinished', id); } 
-		else if (hand.value === 21 && hand.state === 'Soft') { } 
+		else if (hand.value === 21 && hand.state === '(Soft)') { } 
 		else if (hand.name === '21') { $.publish('turnFinished', id); }		
 		else if (pontoon.table.players.lookup(id).bets.length === hand.cards.length -1) {
 			if (pontoon.table.players.lookup(id).chips >= document.getElementById('stake-' + id).min) {
@@ -102,8 +102,8 @@ function twisted(id, hand) { // This could possibly be published in cards.js han
 
 function checkHand(hand) { // Needs refactoring
 	var handVal = 0,
-		handLen = hand.cards.length,
-		aces = 0;
+			handLen = hand.cards.length,
+			aces = 0;
 
 	for (var i = 0; i < handLen; i++) {
 		if (hand.cards[i].rank == 'A') { aces++; }
@@ -198,12 +198,12 @@ function checkHand(hand) { // Needs refactoring
 
 function checkHands(order) {
 	var pontoons,
-		banker = pontoon.table.players.lookup(pontoon.banker);
+			banker = pontoon.table.players.lookup(pontoon.banker);
 
 	for (var i = 0, len = order.length; i < len; i++) {
 		var player = pontoon.table.players.lookup(order[i]),
-			playerDiv = document.getElementById(player.id),
-			stake = player.betTotal();
+				playerDiv = document.getElementById(player.id),
+				stake = player.betTotal();
 		if (banker.hand.name === 'Pontoon') {
 			statusDisp.innerHTML = 'Banker has pontoon';
 			document.getElementById(banker.id).style.background = '#EFFFF0';

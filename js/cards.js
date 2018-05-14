@@ -7,12 +7,13 @@ class Game {
 		this.hiStake = config.hiStake;
 		this.table = new Table(config.cardVals);
 		this.banker;
+		this.maxPlayers = 8;
 		// this.rules; winning hands etc passed in config / require module
 	}
 
 	addPlayer(name) {
 		var numPlayers = this.table.dealOrder.length;
-		if (numPlayers < 8) {
+		if (numPlayers < this.maxPlayers) {
 			var id = 'P_' + numPlayers;
 			this.table.addToTable(id);
 			return this.table.players.store(id, new Player(id, name));
@@ -24,7 +25,7 @@ class Game {
 		while (!cutCards.length) {
 			for (var i = 0, len = this.table.dealOrder.length; i < len; i++) {
 				var cut = this.table.deck.cut(),
-					player = this.table.players.lookup(this.table.dealOrder[i]);	
+						player = this.table.players.lookup(this.table.dealOrder[i]);	
 				cutCards.push( player.cutCards(cut) ); 
 			}
 			if ( findDuplicates(cutCards) ) { cutCards = []; }
@@ -59,7 +60,7 @@ class Table {
 
 	setDealOrder() { // Sorts array so dealer is last
 		var order = [],
-			bankerIdx = this.dealOrder.indexOf(this.dealer);
+				bankerIdx = this.dealOrder.indexOf(this.dealer);
 
 		if (this.dealOrder.indexOf(this.dealer) !== this.dealOrder.length -1) {
 			var start = this.dealOrder.splice(bankerIdx+1);
@@ -178,13 +179,13 @@ class Deck {
 
 	shuffle(amount) {
 		var amount = amount ? amount : 7,
-			len = this.cards.length;
+				len = this.cards.length;
 
 		for (var i = 0; i < amount; i++) {
 			var	split = this.splitPoint(len),
-				deckL = this.cards,
-				deckR = deckL.splice( split, len - split ),
-				shuffledDeck = [];
+					deckL = this.cards,
+					deckR = deckL.splice( split, len - split ),
+					shuffledDeck = [];
 
 			for (var j = 0; j < len;) {
 				if (deckL.length) { riffle( deckL, randomInt(1,2) ) }
